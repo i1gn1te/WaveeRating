@@ -20,6 +20,13 @@ const playlists_js_1 = __importDefault(require("./routes/playlists.js"));
 const recommendations_js_1 = __importDefault(require("./routes/recommendations.js"));
 const app = (0, express_1.default)();
 const PORT = Number(process.env.PORT) || 3001;
+function markDeprecated(routeName) {
+    return (_req, res, next) => {
+        res.setHeader('Deprecation', 'true');
+        res.setHeader('X-Wavee-Deprecated', `${routeName} is kept for legacy compatibility. Use profiles, public reviews, Spotify, and instagram-reviews APIs for the current product.`);
+        next();
+    };
+}
 // Srodkowa warstwa aplikacji
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {
@@ -43,13 +50,13 @@ app.use((0, cookie_parser_1.default)());
 // Trasy API
 app.use('/api/auth', auth_js_1.default);
 app.use('/api/user', user_js_1.default);
-app.use('/api/reviews', reviews_js_1.default);
+app.use('/api/reviews', markDeprecated('/api/reviews'), reviews_js_1.default);
 app.use('/api/instagram-reviews', instagramReviews_js_1.default);
 app.use('/api/profiles', profiles_js_1.default);
 app.use('/api/public/reviews', publicReviews_js_1.default);
 app.use('/api/spotify', spotify_js_1.default);
-app.use('/api/playlists', playlists_js_1.default);
-app.use('/api/recommendations', recommendations_js_1.default);
+app.use('/api/playlists', markDeprecated('/api/playlists'), playlists_js_1.default);
+app.use('/api/recommendations', markDeprecated('/api/recommendations'), recommendations_js_1.default);
 // Sprawdzenie czy API dziala
 app.get('/api/health', (req, res) => {
     res.json({

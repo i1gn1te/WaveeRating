@@ -37,8 +37,17 @@ import {
   SongCategoryRatings,
   TrackRating,
 } from '../types/instagramReview'
+import usePageTitle from '../hooks/usePageTitle'
 
 type AlbumCarouselSlideId = 'cover' | 'review' | 'track-ratings' | 'best' | 'weakest'
+
+const REVIEW_TEXT_LIMITS = {
+  title: 120,
+  body: 2000,
+  recommendation: 300,
+  trackNote: 500,
+  spotlight: 500,
+}
 
 const DEFAULT_ALBUM_SLIDES: CarouselSlideConfig<AlbumCarouselSlideId>[] = [
   { id: 'cover', label: 'Cover Slide', filenameSlug: 'cover', enabled: true },
@@ -88,6 +97,10 @@ function slugify(value: string) {
 
 function createCategoryRatings<T extends readonly string[]>(categories: T, value = 7) {
   return Object.fromEntries(categories.map((name) => [name, value])) as Record<T[number], number>
+}
+
+function limitError(label: string, value: string, max: number) {
+  return value.length > max ? `${label} must be ${max} characters or fewer.` : null
 }
 
 function calculateTrackFinalScore(rating: TrackRating) {
@@ -249,6 +262,7 @@ export default function AlbumReviewBuilder() {
 
   const album = albumQuery.data
   const tracks = tracksQuery.data || []
+  usePageTitle(album ? `${album.title || album.name} Review` : 'Album Review')
 
   const [trackRatings, setTrackRatings] = useState<Record<string, TrackRating>>({})
   const [expandedTrackIds, setExpandedTrackIds] = useState<Record<string, boolean>>({})
@@ -270,8 +284,8 @@ export default function AlbumReviewBuilder() {
   const [isSavingReview, setIsSavingReview] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [carouselPresetId, setCarouselPresetId] = useState('classic-purple')
-  const [templateId, setTemplateId] = useState<SlideTemplateId>('classic-cover')
+  const [carouselPresetId, setCarouselPresetId] = useState('signature-purple')
+  const [templateId, setTemplateId] = useState<SlideTemplateId>('signature-cover')
   const [textSettings, setTextSettings] = useState<SlideTextSettings>(DEFAULT_TEXT_SETTINGS)
   const [albumSlides, setAlbumSlides] = useState<CarouselSlideConfig<AlbumCarouselSlideId>[]>(DEFAULT_ALBUM_SLIDES)
   const [slideStyle, setSlideStyle] = useState<SlideStyle>({
@@ -315,6 +329,26 @@ export default function AlbumReviewBuilder() {
   )
   const calculatedAlbumScore = trackAverage * 0.6 + albumCategoryAverage * 0.4
   const finalAlbumScore = overrideAlbumScoreEnabled ? overrideAlbumScore : calculatedAlbumScore
+  const textErrors = useMemo(
+    () => ({
+      verdict: limitError('Review title', verdict, REVIEW_TEXT_LIMITS.title),
+      albumReview: limitError('Review body', albumReview, REVIEW_TEXT_LIMITS.body),
+      recommendation: limitError('Final recommendation', recommendation, REVIEW_TEXT_LIMITS.recommendation),
+      bestTrackReview: limitError('Best track note', bestTrackReview, REVIEW_TEXT_LIMITS.spotlight),
+      weakestTrackReview: limitError('Weakest track note', weakestTrackReview, REVIEW_TEXT_LIMITS.spotlight),
+    }),
+    [albumReview, bestTrackReview, recommendation, verdict, weakestTrackReview]
+  )
+  const trackNoteErrors = useMemo(
+    () =>
+      Object.fromEntries(
+        trackRatingList
+          .map((rating) => [rating.spotifyTrackId, limitError('Track note', rating.note || '', REVIEW_TEXT_LIMITS.trackNote)] as const)
+          .filter(([, error]) => Boolean(error))
+      ) as Record<string, string>,
+    [trackRatingList]
+  )
+  const hasTextErrors = Object.values(textErrors).some(Boolean) || Object.keys(trackNoteErrors).length > 0
   const suggestedBestTrackId = useMemo(() => getSuggestedTrackId(trackRatingList, 'best'), [trackRatingList])
   const suggestedWeakestTrackId = useMemo(() => getSuggestedTrackId(trackRatingList, 'weakest'), [trackRatingList])
 
@@ -473,12 +507,17 @@ export default function AlbumReviewBuilder() {
     setSaveError(null)
 
     if (!isAuthenticated) {
-      setSaveError('Log in to save this review to your profile.')
+      setSaveError('Log in to save drafts or publish reviews to your profile.')
       return
     }
 
     if (!album || !albumReviewDraft) {
       setSaveError('Album review is not ready yet.')
+      return
+    }
+
+    if (hasTextErrors) {
+      setSaveError('Fix the highlighted review text before saving.')
       return
     }
 
@@ -514,7 +553,7 @@ export default function AlbumReviewBuilder() {
         isPublic: visibility !== 'private',
         visibility,
       })
-      setSaveMessage(isDraft ? 'Draft saved to your profile.' : 'Saved to your profile.')
+      setSaveMessage(isDraft ? 'Draft saved.' : 'Review saved to your profile.')
     } catch (error) {
       setSaveError((error as any)?.response?.data?.error || 'Failed to save review.')
     } finally {
@@ -534,12 +573,22 @@ export default function AlbumReviewBuilder() {
     return (
       <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
         <div className="mx-auto max-w-3xl rounded-xl border border-red-800 bg-red-950/40 p-8">
-          <Link to="/instagram/albums" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
+          <Link to="/albums" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Back to albums
           </Link>
           <h1 className="text-2xl font-bold text-red-100">Album builder cannot load.</h1>
           <p className="mt-3 text-red-100/80">{errorMessage}</p>
+          <button
+            type="button"
+            onClick={() => {
+              albumQuery.refetch()
+              tracksQuery.refetch()
+            }}
+            className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+          >
+            Retry
+          </button>
         </div>
       </main>
     )
@@ -549,20 +598,20 @@ export default function AlbumReviewBuilder() {
     <main className="min-h-screen bg-gray-950 text-white" data-draft-ready={albumReviewDraft ? 'true' : 'false'}>
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to="/instagram/albums" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/albums" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Albums
           </Link>
           <div className="flex flex-wrap items-center gap-4">
-            <Link to="/instagram/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+            <Link to="/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
               <ListChecks className="h-4 w-4" />
               Rate menu
             </Link>
-            <Link to="/instagram/artists" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+            <Link to="/artists" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
               <UserRound className="h-4 w-4" />
               Artists
             </Link>
-            <Link to="/instagram/profile" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+            <Link to="/library" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
               <BookOpen className="h-4 w-4" />
               Library
             </Link>
@@ -696,7 +745,13 @@ export default function AlbumReviewBuilder() {
                             onChange={(event) => updateTrackRating(track, (current) => ({ ...current, note: event.target.value }))}
                             placeholder="Track note..."
                             rows={3}
+                            maxLength={REVIEW_TEXT_LIMITS.trackNote + 1}
                             className="mt-4 w-full rounded-lg border border-gray-800 bg-gray-950 px-4 py-3 text-white outline-none transition focus:border-pink-400"
+                          />
+                          <FieldMeta
+                            count={rating.note?.length || 0}
+                            max={REVIEW_TEXT_LIMITS.trackNote}
+                            error={trackNoteErrors[rating.spotifyTrackId]}
                           />
                         </div>
                       )}
@@ -767,6 +822,7 @@ export default function AlbumReviewBuilder() {
                   setBestTrackId(value)
                 }}
                 onTextChange={setBestTrackReview}
+                error={textErrors.bestTrackReview || undefined}
               />
               <TrackSpotlightEditor
                 title="Weakest Track"
@@ -780,6 +836,7 @@ export default function AlbumReviewBuilder() {
                   setWeakestTrackId(value)
                 }}
                 onTextChange={setWeakestTrackReview}
+                error={textErrors.weakestTrackReview || undefined}
               />
             </section>
 
@@ -790,22 +847,28 @@ export default function AlbumReviewBuilder() {
                   value={verdict}
                   onChange={(event) => setVerdict(event.target.value)}
                   placeholder="Short verdict/title..."
+                  maxLength={REVIEW_TEXT_LIMITS.title + 1}
                   className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
                 />
+                <FieldMeta count={verdict.length} max={REVIEW_TEXT_LIMITS.title} error={textErrors.verdict || undefined} />
                 <textarea
                   value={albumReview}
                   onChange={(event) => setAlbumReview(event.target.value)}
                   placeholder="Full album review..."
                   rows={6}
+                  maxLength={REVIEW_TEXT_LIMITS.body + 1}
                   className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
                 />
+                <FieldMeta count={albumReview.length} max={REVIEW_TEXT_LIMITS.body} error={textErrors.albumReview || undefined} />
                 <textarea
                   value={recommendation}
                   onChange={(event) => setRecommendation(event.target.value)}
                   placeholder="Italic-style final recommendation..."
                   rows={3}
+                  maxLength={REVIEW_TEXT_LIMITS.recommendation + 1}
                   className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
                 />
+                <FieldMeta count={recommendation.length} max={REVIEW_TEXT_LIMITS.recommendation} error={textErrors.recommendation || undefined} />
               </div>
             </section>
 
@@ -999,6 +1062,7 @@ function TrackSpotlightEditor({
   text,
   onTrackChange,
   onTextChange,
+  error,
 }: {
   title: string
   tracks: ReviewTrack[]
@@ -1008,6 +1072,7 @@ function TrackSpotlightEditor({
   text: string
   onTrackChange: (value: string) => void
   onTextChange: (value: string) => void
+  error?: string
 }) {
   const color = scoreColor(selectedScore)
 
@@ -1041,9 +1106,20 @@ function TrackSpotlightEditor({
           onChange={(event) => onTextChange(event.target.value)}
           placeholder={`Short ${title.toLowerCase()} review...`}
           rows={4}
+          maxLength={REVIEW_TEXT_LIMITS.spotlight + 1}
           className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
         />
+        <FieldMeta count={text.length} max={REVIEW_TEXT_LIMITS.spotlight} error={error} />
       </div>
     </section>
+  )
+}
+
+function FieldMeta({ count, max, error }: { count: number; max: number; error?: string }) {
+  return (
+    <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <span className={error ? 'text-red-200' : 'text-gray-500'}>{count}/{max}</span>
+      {error && <span className="text-red-200">{error}</span>}
+    </div>
   )
 }

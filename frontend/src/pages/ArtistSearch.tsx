@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Disc3, Loader2, Search as SearchIcon, UserRound } from 'lucide-react'
 import { getSpotifyImageProxyUrl, searchArtists } from '../lib/api'
+import usePageTitle from '../hooks/usePageTitle'
 
 interface ArtistResult {
   id: string
@@ -29,8 +30,9 @@ function artistImage(artist: ArtistResult) {
 export default function ArtistSearch() {
   const [query, setQuery] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  usePageTitle('Artists')
 
-  const { data: artists, isLoading, isFetching, isError, error } = useQuery<ArtistResult[]>({
+  const { data: artists, isLoading, isFetching, isError, error, refetch } = useQuery<ArtistResult[]>({
     queryKey: ['instagram-artist-search', searchTerm],
     queryFn: () => searchArtists(searchTerm).then((res) => res.data),
     enabled: searchTerm.length > 0,
@@ -48,11 +50,11 @@ export default function ArtistSearch() {
     <main className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex items-center justify-between">
-          <Link to="/instagram" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             WaveeRating
           </Link>
-          <Link to="/instagram/albums" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/albums" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <Disc3 className="h-4 w-4" />
             Search albums
           </Link>
@@ -103,7 +105,7 @@ export default function ArtistSearch() {
                 return (
                   <Link
                     key={artist.id}
-                    to={`/instagram/artists/${artist.id}`}
+                    to={`/artists/${artist.id}`}
                     className="group overflow-hidden rounded-xl border border-gray-800 bg-gray-900 text-left transition hover:-translate-y-1 hover:border-cyan-300"
                   >
                     {artistImage(artist) ? (
@@ -132,9 +134,9 @@ export default function ArtistSearch() {
           </div>
         )}
 
-        {searchTerm && artists && artists.length === 0 && (
+        {searchTerm && !isError && artists && artists.length === 0 && (
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-10 text-center text-gray-400">
-            No artists found for "{searchTerm}".
+            No artists found.
           </div>
         )}
 
@@ -144,6 +146,13 @@ export default function ArtistSearch() {
             <p className="mt-2 text-sm text-red-200/70">
               {(error as any)?.response?.data?.error || 'Spotify API is not configured. Add Spotify credentials to backend .env.'}
             </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+            >
+              Retry
+            </button>
           </div>
         )}
 

@@ -1,17 +1,8 @@
-import { BrowserRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import Layout from './components/Layout'
-import ModeSelect from './pages/ModeSelect'
-import Home from './pages/Home'
+import WaveeHome from './pages/WaveeHome'
 import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Search from './pages/Search'
-import Track from './pages/Track'
-import Reviews from './pages/Reviews'
-import PlaylistGenerator from './pages/PlaylistGenerator'
-import Profile from './pages/Profile'
-import Community from './pages/Community'
-import InstagramHome from './pages/InstagramHome'
 import InstagramRate from './pages/InstagramRate'
 import InstagramProfile from './pages/InstagramProfile'
 import InstagramAlbumReviewDetail from './pages/InstagramAlbumReviewDetail'
@@ -33,10 +24,17 @@ import PublicAlbumReview from './pages/PublicAlbumReview'
 import PublicSongReview from './pages/PublicSongReview'
 import ProtectedRoute from './components/ProtectedRoute'
 
-function LegacyAppRedirect() {
+function RedirectTo({ to }: { to: string }) {
   const location = useLocation()
+  return <Navigate to={`${to}${location.search}${location.hash}`} replace />
+}
 
-  return <Navigate to={`/classic${location.pathname}${location.search}`} replace />
+function RedirectWithParam({ base, paramName, suffix = '' }: { base: string; paramName: string; suffix?: string }) {
+  const params = useParams()
+  const location = useLocation()
+  const value = params[paramName]
+
+  return <Navigate to={`${base}/${value || ''}${suffix}${location.search}${location.hash}`} replace />
 }
 
 function App() {
@@ -44,82 +42,76 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route index element={<ModeSelect />} />
-
-          <Route path="/instagram" element={<InstagramHome />} />
-          <Route path="/instagram/rate" element={<InstagramRate />} />
-          <Route path="/instagram/profile" element={
-            <ProtectedRoute><InstagramProfile /></ProtectedRoute>
-          } />
-          <Route path="/instagram/profile/albums/:id" element={
-            <ProtectedRoute><InstagramAlbumReviewDetail /></ProtectedRoute>
-          } />
-          <Route path="/instagram/profile/albums/:id/edit" element={
-            <ProtectedRoute><InstagramAlbumReviewEdit /></ProtectedRoute>
-          } />
-          <Route path="/instagram/profile/songs/:id" element={
-            <ProtectedRoute><InstagramSongReviewDetail /></ProtectedRoute>
-          } />
-          <Route path="/instagram/profile/songs/:id/edit" element={
-            <ProtectedRoute><InstagramSongReviewEdit /></ProtectedRoute>
-          } />
-          <Route path="/instagram/albums" element={<AlbumSearch />} />
-          <Route path="/instagram/albums/:id" element={<AlbumReviewBuilder />} />
-          <Route path="/instagram/artists" element={<ArtistSearch />} />
-          <Route path="/instagram/artists/:id" element={<ArtistProfile />} />
-          <Route path="/instagram/songs" element={<SongRatingHome />} />
-          <Route path="/instagram/songs/:id" element={<SongReviewBuilder />} />
-
-          <Route path="/profile/settings" element={
-            <ProtectedRoute><ProfileSettings /></ProtectedRoute>
-          } />
-          <Route path="/feed" element={
-            <ProtectedRoute><FollowingFeed /></ProtectedRoute>
-          } />
-          <Route path="/u/:username" element={<PublicProfile />} />
-          <Route path="/u/:username/albums" element={<PublicProfileAlbums />} />
-          <Route path="/u/:username/songs" element={<PublicProfileSongs />} />
-          <Route path="/reviews/albums/:id" element={<PublicAlbumReview />} />
-          <Route path="/reviews/songs/:id" element={<PublicSongReview />} />
-
-          <Route path="/classic" element={<Layout basePath="/classic" />}>
-            <Route index element={<Home />} />
+          <Route element={<Layout />}>
+            <Route index element={<WaveeHome />} />
             <Route path="login" element={<Login />} />
-            <Route path="dashboard" element={
-              <ProtectedRoute><Dashboard /></ProtectedRoute>
-            } />
-            <Route path="search" element={
-              <ProtectedRoute><Search /></ProtectedRoute>
-            } />
-            <Route path="track/:trackId" element={
-              <ProtectedRoute><Track /></ProtectedRoute>
-            } />
-            <Route path="reviews" element={
-              <ProtectedRoute><Reviews /></ProtectedRoute>
-            } />
-            <Route path="generator" element={
-              <ProtectedRoute><PlaylistGenerator /></ProtectedRoute>
-            } />
-            <Route path="community" element={
-              <ProtectedRoute><Community /></ProtectedRoute>
-            } />
-            <Route path="community/:userId" element={
-              <ProtectedRoute><Community /></ProtectedRoute>
-            } />
-            <Route path="profile" element={
-              <ProtectedRoute><Profile /></ProtectedRoute>
-            } />
-          </Route>
+            <Route path="register" element={<RedirectTo to="/login?mode=register" />} />
 
-          <Route path="/login" element={<LegacyAppRedirect />} />
-          <Route path="/dashboard" element={<LegacyAppRedirect />} />
-          <Route path="/search" element={<LegacyAppRedirect />} />
-          <Route path="/track/:trackId" element={<LegacyAppRedirect />} />
-          <Route path="/reviews" element={<LegacyAppRedirect />} />
-          <Route path="/generator" element={<LegacyAppRedirect />} />
-          <Route path="/community" element={<LegacyAppRedirect />} />
-          <Route path="/community/:userId" element={<LegacyAppRedirect />} />
-          <Route path="/profile" element={<LegacyAppRedirect />} />
+            <Route path="rate" element={<InstagramRate />} />
+            <Route path="albums" element={<AlbumSearch />} />
+            <Route path="albums/:id" element={<AlbumReviewBuilder />} />
+            <Route path="songs" element={<SongRatingHome />} />
+            <Route path="songs/:id" element={<SongReviewBuilder />} />
+            <Route path="artists" element={<ArtistSearch />} />
+            <Route path="artists/:id" element={<ArtistProfile />} />
+
+            <Route path="library" element={
+              <ProtectedRoute><InstagramProfile /></ProtectedRoute>
+            } />
+            <Route path="library/albums/:id" element={
+              <ProtectedRoute><InstagramAlbumReviewDetail /></ProtectedRoute>
+            } />
+            <Route path="library/albums/:id/edit" element={
+              <ProtectedRoute><InstagramAlbumReviewEdit /></ProtectedRoute>
+            } />
+            <Route path="library/songs/:id" element={
+              <ProtectedRoute><InstagramSongReviewDetail /></ProtectedRoute>
+            } />
+            <Route path="library/songs/:id/edit" element={
+              <ProtectedRoute><InstagramSongReviewEdit /></ProtectedRoute>
+            } />
+
+            <Route path="profile/library" element={<RedirectTo to="/library" />} />
+            <Route path="profile/settings" element={
+              <ProtectedRoute><ProfileSettings /></ProtectedRoute>
+            } />
+            <Route path="feed" element={
+              <ProtectedRoute><FollowingFeed /></ProtectedRoute>
+            } />
+
+            <Route path="u/:username" element={<PublicProfile />} />
+            <Route path="u/:username/albums" element={<PublicProfileAlbums />} />
+            <Route path="u/:username/songs" element={<PublicProfileSongs />} />
+            <Route path="reviews/albums/:id" element={<PublicAlbumReview />} />
+            <Route path="reviews/songs/:id" element={<PublicSongReview />} />
+
+            <Route path="instagram" element={<RedirectTo to="/" />} />
+            <Route path="instagram/rate" element={<RedirectTo to="/rate" />} />
+            <Route path="instagram/albums" element={<RedirectTo to="/albums" />} />
+            <Route path="instagram/albums/:id" element={<RedirectWithParam base="/albums" paramName="id" />} />
+            <Route path="instagram/songs" element={<RedirectTo to="/songs" />} />
+            <Route path="instagram/songs/:id" element={<RedirectWithParam base="/songs" paramName="id" />} />
+            <Route path="instagram/artists" element={<RedirectTo to="/artists" />} />
+            <Route path="instagram/artists/:id" element={<RedirectWithParam base="/artists" paramName="id" />} />
+            <Route path="instagram/profile" element={<RedirectTo to="/library" />} />
+            <Route path="instagram/profile/albums/:id" element={<RedirectWithParam base="/library/albums" paramName="id" />} />
+            <Route path="instagram/profile/albums/:id/edit" element={<RedirectWithParam base="/library/albums" paramName="id" suffix="/edit" />} />
+            <Route path="instagram/profile/songs/:id" element={<RedirectWithParam base="/library/songs" paramName="id" />} />
+            <Route path="instagram/profile/songs/:id/edit" element={<RedirectWithParam base="/library/songs" paramName="id" suffix="/edit" />} />
+
+            <Route path="classic" element={<RedirectTo to="/" />} />
+            <Route path="classic/*" element={<RedirectTo to="/" />} />
+            <Route path="dashboard" element={<RedirectTo to="/" />} />
+            <Route path="search" element={<RedirectTo to="/albums" />} />
+            <Route path="track/:trackId" element={<RedirectWithParam base="/songs" paramName="trackId" />} />
+            <Route path="reviews" element={<RedirectTo to="/library" />} />
+            <Route path="generator" element={<RedirectTo to="/rate" />} />
+            <Route path="community" element={<RedirectTo to="/feed" />} />
+            <Route path="community/:userId" element={<RedirectTo to="/feed" />} />
+            <Route path="profile" element={<RedirectTo to="/profile/settings" />} />
+
+            <Route path="*" element={<RedirectTo to="/" />} />
+          </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>

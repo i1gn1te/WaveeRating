@@ -246,14 +246,14 @@ router.get('/callback', async (req, res) => {
     console.log('[Auth callback] Using CLIENT_URL:', clientUrl);
     
     if (error)
-        return res.redirect(`${clientUrl}/classic/login?error=${error}`);
+        return res.redirect(`${clientUrl}/login?error=${error}`);
     if (!code || typeof code !== 'string')
-        return res.redirect(`${clientUrl}/classic/login?error=no_code`);
+        return res.redirect(`${clientUrl}/login?error=no_code`);
     
     // Nie pozwalaj uzyc tego samego code ponownie
     if (processedCodes.has(code)) {
         console.error('[Auth callback] Code already processed (reuse attempt):', code.slice(0, 10));
-        return res.redirect(`${clientUrl}/classic/login?error=code_reused`);
+        return res.redirect(`${clientUrl}/login?error=code_reused`);
     }
     processedCodes.add(code);
     // Usun stary code po 5 minutach
@@ -303,8 +303,8 @@ router.get('/callback', async (req, res) => {
         const token = createSessionToken(sessionUser, tokens.access_token, tokens.refresh_token);
         console.log('[Auth callback] JWT token created, setting cookie and redirecting...');
         sendSessionCookie(res, token);
-        console.log('[Auth callback] Redirecting to:', `${clientUrl}/classic/dashboard`);
-        res.redirect(`${clientUrl}/classic/dashboard`);
+        console.log('[Auth callback] Redirecting to:', `${clientUrl}/library`);
+        res.redirect(`${clientUrl}/library`);
     }
     catch (err) {
         console.error('[Auth callback] ERROR - Type:', err.constructor.name);
@@ -316,7 +316,7 @@ router.get('/callback', async (req, res) => {
         if (err.code === 'P2002') {
             console.error('[Auth callback] ERROR - Prisma constraint violation:', err.meta);
         }
-        res.redirect(`${clientUrl}/classic/login?error=auth_failed`);
+        res.redirect(`${clientUrl}/login?error=auth_failed`);
     }
 });
 // Pobiera biezacego uzytkownika

@@ -1,17 +1,20 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft, BookOpen, Disc3, Music2 } from 'lucide-react'
+import usePageTitle from '../hooks/usePageTitle'
 
 export default function InstagramRate() {
+  usePageTitle('Rate Music')
+
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-10 flex items-center justify-between">
-          <Link to="/instagram" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             WaveeRating
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/instagram/profile" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+            <Link to="/library" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
               <BookOpen className="h-4 w-4" />
               Library
             </Link>
@@ -38,7 +41,7 @@ export default function InstagramRate() {
 
           <div className="grid gap-5 md:grid-cols-2">
             <Link
-              to="/instagram/albums"
+              to="/albums"
               className="group rounded-xl border border-gray-800 bg-gray-900 p-6 transition hover:-translate-y-1 hover:border-pink-400"
             >
               <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-pink-500/15 text-pink-200">
@@ -51,7 +54,7 @@ export default function InstagramRate() {
             </Link>
 
             <Link
-              to="/instagram/songs"
+              to="/songs"
               className="group rounded-xl border border-gray-800 bg-gray-900 p-6 transition hover:-translate-y-1 hover:border-cyan-300"
             >
               <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-400/15 text-cyan-100">

@@ -22,14 +22,14 @@ export type SongCategoryRatings = Record<(typeof SONG_RATING_CATEGORIES)[number]
 export type ReviewVisibility = 'public' | 'private' | 'unlisted'
 
 export type SlideTemplateId =
-  | 'classic-cover'
+  | 'signature-cover'
   | 'editorial-review'
   | 'poster-score'
   | 'minimal-card'
   | 'magazine-layout'
   | 'compact-summary'
 
-export type SlideLayoutMode = 'classic' | 'editorial' | 'poster' | 'minimal' | 'magazine' | 'compact'
+export type SlideLayoutMode = 'signature' | 'editorial' | 'poster' | 'minimal' | 'magazine' | 'compact'
 export type SlideTextSize = 'small' | 'medium' | 'large'
 export type SlideFontMood = 'clean' | 'editorial' | 'bold'
 
@@ -53,7 +53,7 @@ export interface SlideTemplate {
 }
 
 export interface CarouselStylePreset {
-  id: 'classic-purple' | 'minimal-editorial' | 'dark-poster'
+  id: 'signature-purple' | 'minimal-editorial' | 'dark-poster'
   name: string
   description: string
   theme: ReviewTheme

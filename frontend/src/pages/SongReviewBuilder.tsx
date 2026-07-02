@@ -7,15 +7,12 @@ import { useAuth } from '../contexts/AuthContext'
 import { saveSongReview } from '../lib/instagramReviewsApi'
 import RatingSlider, { clampRatingScore, scoreColor } from '../components/instagram/RatingSlider'
 import ReviewSaveActions from '../components/instagram/ReviewSaveActions'
-import CarouselZipExportButton from '../components/instagram/CarouselZipExportButton'
 import SongExportButton from '../components/instagram/SongExportButton'
 import SongReviewSlidePreview from '../components/instagram/SongReviewSlidePreview'
 import ThemePresetPicker from '../components/instagram/ThemePresetPicker'
 import CarouselTemplatePicker from '../components/instagram/CarouselTemplatePicker'
-import CarouselSlidesPanel from '../components/instagram/CarouselSlidesPanel'
 import TextSettingsControls from '../components/instagram/TextSettingsControls'
 import {
-  CarouselSlideConfig,
   CarouselStylePreset,
   ReviewVisibility,
   ReviewTheme,
@@ -26,12 +23,14 @@ import {
   SongDraftTrackData,
   SongReviewDraft,
 } from '../types/instagramReview'
+import usePageTitle from '../hooks/usePageTitle'
 
-type SongCarouselSlideId = 'song-review'
-
-const DEFAULT_SONG_SLIDES: CarouselSlideConfig<SongCarouselSlideId>[] = [
-  { id: 'song-review', label: 'Song Review Slide', filenameSlug: 'song-review', enabled: true },
-]
+const REVIEW_TEXT_LIMITS = {
+  title: 120,
+  body: 2000,
+  recommendation: 300,
+  moodTags: 120,
+}
 
 const DEFAULT_TEXT_SETTINGS: SlideTextSettings = {
   titleSize: 'medium',
@@ -52,6 +51,10 @@ function createCategoryRatings<T extends readonly string[]>(categories: T, value
   return Object.fromEntries(categories.map((name) => [name, value])) as Record<T[number], number>
 }
 
+function limitError(label: string, value: string, max: number) {
+  return value.length > max ? `${label} must be ${max} characters or fewer.` : null
+}
+
 function formatDuration(durationMs?: number) {
   if (!durationMs) {
     return '--:--'
@@ -69,16 +72,6 @@ function artistLine(track?: SongDraftTrackData) {
 
 function trackTitle(track?: SongDraftTrackData) {
   return track?.title || track?.name || 'Untitled song'
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 70)
 }
 
 function calculateSongScore({
@@ -168,7 +161,7 @@ export default function SongReviewBuilder() {
   const { id } = useParams()
   const { isAuthenticated } = useAuth()
   const trackId = id || ''
-  const songSlideRef = useRef<HTMLDivElement>(null)
+  const songReviewRef = useRef<HTMLDivElement>(null)
 
   const trackQuery = useQuery<SongDraftTrackData>({
     queryKey: ['instagram-song', trackId],
@@ -177,6 +170,7 @@ export default function SongReviewBuilder() {
   })
 
   const track = trackQuery.data
+  usePageTitle(track ? `${trackTitle(track)} Review` : 'Song Review')
   const [quickRating, setQuickRating] = useState(7)
   const [useDetailedRating, setUseDetailedRating] = useState(false)
   const [categoryRatings, setCategoryRatings] = useState<SongCategoryRatings>(
@@ -192,10 +186,9 @@ export default function SongReviewBuilder() {
   const [isSavingReview, setIsSavingReview] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [carouselPresetId, setCarouselPresetId] = useState('classic-purple')
-  const [templateId, setTemplateId] = useState<SlideTemplateId>('classic-cover')
+  const [carouselPresetId, setCarouselPresetId] = useState('signature-purple')
+  const [templateId, setTemplateId] = useState<SlideTemplateId>('signature-cover')
   const [textSettings, setTextSettings] = useState<SlideTextSettings>(DEFAULT_TEXT_SETTINGS)
-  const [songSlides, setSongSlides] = useState<CarouselSlideConfig<SongCarouselSlideId>[]>(DEFAULT_SONG_SLIDES)
   const [slideStyle, setSlideStyle] = useState<ReviewTheme>({
     backgroundColor: '#083344',
     cardColor: '#10232f',
@@ -217,6 +210,16 @@ export default function SongReviewBuilder() {
     overrideScoreEnabled,
     overrideScore,
   })
+  const textErrors = useMemo(
+    () => ({
+      reviewTitle: limitError('Review title', reviewTitle, REVIEW_TEXT_LIMITS.title),
+      reviewBody: limitError('Review body', reviewBody, REVIEW_TEXT_LIMITS.body),
+      finalNote: limitError('Final recommendation', finalNote, REVIEW_TEXT_LIMITS.recommendation),
+      moodTags: limitError('Mood / tags', moodTags, REVIEW_TEXT_LIMITS.moodTags),
+    }),
+    [finalNote, moodTags, reviewBody, reviewTitle]
+  )
+  const hasTextErrors = Object.values(textErrors).some(Boolean)
 
   const songReviewDraft = useMemo<SongReviewDraft | null>(() => {
     if (!track) {
@@ -245,7 +248,6 @@ export default function SongReviewBuilder() {
       visibility,
       templateId,
       textSettings,
-      slideOrder: songSlides,
     }
   }, [
     categoryRatings,
@@ -258,7 +260,6 @@ export default function SongReviewBuilder() {
     reviewBody,
     reviewTitle,
     slideStyle,
-    songSlides,
     templateId,
     textSettings,
     track,
@@ -270,40 +271,6 @@ export default function SongReviewBuilder() {
     setSlideStyle((current) => ({ ...current, [key]: value }))
   }
 
-  const toggleSongSlide = (slideId: SongCarouselSlideId) => {
-    setSongSlides((current) => {
-      const enabledCount = current.filter((slide) => slide.enabled).length
-
-      return current.map((slide) => {
-        if (slide.id !== slideId) {
-          return slide
-        }
-
-        if (slide.enabled && enabledCount <= 1) {
-          return slide
-        }
-
-        return { ...slide, enabled: !slide.enabled }
-      })
-    })
-  }
-
-  const moveSongSlide = (slideId: SongCarouselSlideId, direction: -1 | 1) => {
-    setSongSlides((current) => {
-      const index = current.findIndex((slide) => slide.id === slideId)
-      const nextIndex = index + direction
-
-      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) {
-        return current
-      }
-
-      const next = [...current]
-      const [item] = next.splice(index, 1)
-      next.splice(nextIndex, 0, item)
-      return next
-    })
-  }
-
   const applyCarouselPreset = (preset: CarouselStylePreset) => {
     setCarouselPresetId(preset.id)
     setSlideStyle(preset.theme)
@@ -311,29 +278,22 @@ export default function SongReviewBuilder() {
     setTextSettings(preset.textSettings)
   }
 
-  const activeSongExportTargets = useMemo(
-    () =>
-      songSlides
-        .filter((slide) => slide.enabled)
-        .map((slide, index) => ({
-          filename: `${String(index + 1).padStart(2, '0')}-${slide.filenameSlug}.png`,
-          label: slide.label,
-          ref: songSlideRef,
-        })),
-    [songSlides]
-  )
-
   const handleSaveReview = async (isDraft: boolean) => {
     setSaveMessage(null)
     setSaveError(null)
 
     if (!isAuthenticated) {
-      setSaveError('Log in to save this review to your profile.')
+      setSaveError('Log in to save drafts or publish reviews to your profile.')
       return
     }
 
     if (!track || !songReviewDraft) {
       setSaveError('Song review is not ready yet.')
+      return
+    }
+
+    if (hasTextErrors) {
+      setSaveError('Fix the highlighted review text before saving.')
       return
     }
 
@@ -358,13 +318,12 @@ export default function SongReviewBuilder() {
           moodTags,
           templateId,
           textSettings,
-          slideOrder: songSlides,
         },
         isDraft,
         isPublic: visibility !== 'private',
         visibility,
       })
-      setSaveMessage(isDraft ? 'Draft saved to your profile.' : 'Saved to your profile.')
+      setSaveMessage(isDraft ? 'Draft saved.' : 'Review saved to your profile.')
     } catch (error) {
       setSaveError((error as any)?.response?.data?.error || 'Failed to save review.')
     } finally {
@@ -384,7 +343,7 @@ export default function SongReviewBuilder() {
     return (
       <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
         <div className="mx-auto max-w-3xl rounded-xl border border-red-800 bg-red-950/40 p-8">
-          <Link to="/instagram/songs" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
+          <Link to="/songs" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Back to songs
           </Link>
@@ -392,6 +351,13 @@ export default function SongReviewBuilder() {
           <p className="mt-3 text-red-100/80">
             {(trackQuery.error as any)?.response?.data?.error || 'Spotify API is not configured. Add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to backend .env.'}
           </p>
+          <button
+            type="button"
+            onClick={() => trackQuery.refetch()}
+            className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+          >
+            Retry
+          </button>
         </div>
       </main>
     )
@@ -401,15 +367,15 @@ export default function SongReviewBuilder() {
     <main className="min-h-screen bg-gray-950 text-white" data-draft-ready={songReviewDraft ? 'true' : 'false'}>
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to="/instagram/songs" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/songs" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Songs
           </Link>
-          <Link to="/instagram/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ListChecks className="h-4 w-4" />
             Rate menu
           </Link>
-          <Link to="/instagram/profile" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/library" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <BookOpen className="h-4 w-4" />
             Library
           </Link>
@@ -504,34 +470,40 @@ export default function SongReviewBuilder() {
                   value={reviewTitle}
                   onChange={(event) => setReviewTitle(event.target.value)}
                   placeholder="Review title / short verdict..."
+                  maxLength={REVIEW_TEXT_LIMITS.title + 1}
                   className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
                 />
+                <FieldMeta count={reviewTitle.length} max={REVIEW_TEXT_LIMITS.title} error={textErrors.reviewTitle || undefined} />
                 <textarea
                   value={reviewBody}
                   onChange={(event) => setReviewBody(event.target.value)}
                   placeholder="Song review body..."
                   rows={6}
+                  maxLength={REVIEW_TEXT_LIMITS.body + 1}
                   className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
                 />
+                <FieldMeta count={reviewBody.length} max={REVIEW_TEXT_LIMITS.body} error={textErrors.reviewBody || undefined} />
                 <textarea
                   value={finalNote}
                   onChange={(event) => setFinalNote(event.target.value)}
                   placeholder="Final note / recommendation..."
                   rows={3}
+                  maxLength={REVIEW_TEXT_LIMITS.recommendation + 1}
                   className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
                 />
+                <FieldMeta count={finalNote.length} max={REVIEW_TEXT_LIMITS.recommendation} error={textErrors.finalNote || undefined} />
                 <input
                   value={moodTags}
                   onChange={(event) => setMoodTags(event.target.value)}
                   placeholder="Mood / tags, e.g. dreamy, tense, replayable..."
+                  maxLength={REVIEW_TEXT_LIMITS.moodTags + 1}
                   className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
                 />
+                <FieldMeta count={moodTags.length} max={REVIEW_TEXT_LIMITS.moodTags} error={textErrors.moodTags || undefined} />
               </div>
             </section>
 
             <VisibilitySelect value={visibility} onChange={setVisibility} />
-
-            <CarouselSlidesPanel slides={songSlides} onToggle={toggleSongSlide} onMove={moveSongSlide} />
 
             <section className="rounded-xl border border-gray-800 bg-gray-950 p-5">
               <h2 className="text-xl font-bold">Style customization</h2>
@@ -589,14 +561,10 @@ export default function SongReviewBuilder() {
               onSaveDraft={() => handleSaveReview(true)}
               onSaveToProfile={() => handleSaveReview(false)}
             />
-            <SongExportButton track={track} style={slideStyle} targetRef={songSlideRef} />
-            <CarouselZipExportButton
-              zipFilename={`${slugify(track.artists?.[0]?.name || 'unknown-artist')}-${slugify(track.title || track.name || 'song')}-instagram-review.zip`}
-              style={slideStyle}
-              targets={activeSongExportTargets}
-            />
+            <SongExportButton track={track} style={slideStyle} targetRef={songReviewRef} />
             <SongReviewSlidePreview
-              ref={songSlideRef}
+              key={`${track.id}-${track.imageUrl || 'no-cover'}`}
+              ref={songReviewRef}
               track={track}
               style={slideStyle}
               finalScore={finalScore}
@@ -611,6 +579,15 @@ export default function SongReviewBuilder() {
         </div>
       </div>
     </main>
+  )
+}
+
+function FieldMeta({ count, max, error }: { count: number; max: number; error?: string }) {
+  return (
+    <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <span className={error ? 'text-red-200' : 'text-gray-500'}>{count}/{max}</span>
+      {error && <span className="text-red-200">{error}</span>}
+    </div>
   )
 }
 

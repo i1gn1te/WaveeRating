@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Disc3, Loader2, Search as SearchIcon, UserRound } from 'lucide-react'
 import { searchAlbums } from '../lib/api'
+import usePageTitle from '../hooks/usePageTitle'
 
 interface AlbumArtist {
   id: string
@@ -33,8 +34,9 @@ export default function AlbumSearch() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  usePageTitle('Rate Album')
 
-  const { data: albums, isLoading, isFetching, isError, error } = useQuery<AlbumResult[]>({
+  const { data: albums, isLoading, isFetching, isError, error, refetch } = useQuery<AlbumResult[]>({
     queryKey: ['instagram-album-search', searchTerm],
     queryFn: () => searchAlbums(searchTerm).then((res) => res.data),
     enabled: searchTerm.length > 0,
@@ -50,19 +52,19 @@ export default function AlbumSearch() {
 
   const handleAlbumClick = (album: AlbumResult) => {
     console.log('[WaveeRating] selected album ID:', album.id)
-    navigate(`/instagram/albums/${album.id}`)
+    navigate(`/albums/${album.id}`)
   }
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex items-center justify-between">
-          <Link to="/instagram" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             WaveeRating
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/instagram/artists" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+            <Link to="/artists" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
               <UserRound className="h-4 w-4" />
               Search by artist
             </Link>
@@ -77,11 +79,11 @@ export default function AlbumSearch() {
             <Disc3 className="h-4 w-4" />
             Album picker
           </div>
-          <h1 className="text-3xl font-bold tracking-normal text-white sm:text-4xl">Szukaj albumow Spotify</h1>
+          <h1 className="text-3xl font-bold tracking-normal text-white sm:text-4xl">Search Spotify albums</h1>
           <p className="mt-3 max-w-2xl text-gray-400">
-            Wybierz album jako punkt startowy recenzji i opcjonalnego eksportu slajdow.
+            Pick an album or EP, write a review, and export Instagram-ready slides.
           </p>
-          <Link to="/instagram/artists" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-cyan-100">
+          <Link to="/artists" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-cyan-100">
             <UserRound className="h-4 w-4" />
             Search by artist
           </Link>
@@ -93,7 +95,7 @@ export default function AlbumSearch() {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Wpisz nazwe albumu lub artysty..."
+            placeholder="Type an album, EP, artist, or both..."
             className="w-full rounded-xl border border-gray-800 bg-gray-900 py-4 pl-12 pr-36 text-white placeholder-gray-500 transition focus:border-pink-400 focus:outline-none"
           />
           <button
@@ -101,7 +103,7 @@ export default function AlbumSearch() {
             disabled={!query.trim() || isFetching}
             className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-lg bg-pink-500 px-5 py-2 font-medium text-white transition hover:bg-pink-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isFetching ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Szukaj'}
+            {isFetching ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Search'}
           </button>
         </form>
 
@@ -113,7 +115,7 @@ export default function AlbumSearch() {
 
         {albums && albums.length > 0 && (
           <div>
-            <p className="mb-4 text-gray-400">Znaleziono {albums.length} albumow</p>
+            <p className="mb-4 text-gray-400">Found {albums.length} albums</p>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
               {albums.map((album) => (
                 <button
@@ -138,7 +140,7 @@ export default function AlbumSearch() {
                     </p>
                     <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
                       <span>{getReleaseYear(album)}</span>
-                      <span>{album.totalTracks ?? 0} utworow</span>
+                      <span>{album.totalTracks ?? 0} tracks</span>
                     </div>
                   </div>
                 </button>
@@ -147,25 +149,32 @@ export default function AlbumSearch() {
           </div>
         )}
 
-        {searchTerm && albums && albums.length === 0 && (
+        {searchTerm && !isError && albums && albums.length === 0 && (
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-10 text-center text-gray-400">
-            Nie znaleziono albumow dla "{searchTerm}".
+            No albums found.
           </div>
         )}
 
         {searchTerm && isError && (
           <div className="rounded-xl border border-red-800 bg-red-950/40 p-8 text-center">
-            <p className="font-semibold text-red-200">Nie udalo sie pobrac albumow.</p>
+            <p className="font-semibold text-red-200">Could not fetch albums.</p>
             <p className="mt-2 text-sm text-red-200/70">
               {(error as any)?.response?.data?.error || 'Spotify API is not configured. Add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to backend .env.'}
             </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+            >
+              Retry
+            </button>
           </div>
         )}
 
         {!searchTerm && (
           <div className="rounded-xl border border-dashed border-gray-800 bg-gray-900/50 p-10 text-center">
             <SearchIcon className="mx-auto mb-4 h-10 w-10 text-gray-700" />
-            <p className="text-gray-400">Wpisz nazwe albumu, zeby zobaczyc wyniki.</p>
+            <p className="text-gray-400">Search for an album or EP to start your review.</p>
           </div>
         )}
       </div>

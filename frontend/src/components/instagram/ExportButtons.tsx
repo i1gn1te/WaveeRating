@@ -55,6 +55,27 @@ function getImageDimensions(dataUrl: string) {
   })
 }
 
+function waitForImages(node: HTMLElement) {
+  const images = Array.from(node.querySelectorAll('img'))
+
+  return Promise.all(
+    images.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          if (image.complete && image.naturalWidth > 0) {
+            resolve()
+            return
+          }
+
+          const done = () => resolve()
+          image.addEventListener('load', done, { once: true })
+          image.addEventListener('error', done, { once: true })
+          window.setTimeout(done, 3000)
+        })
+    )
+  )
+}
+
 export default function ExportButtons({ album, style, targets, orderedTargets }: ExportButtonsProps) {
   const [exporting, setExporting] = useState<ExportKey | 'all' | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -78,9 +99,20 @@ export default function ExportButtons({ album, style, targets, orderedTargets }:
   }, [album, orderedTargets, targets])
 
   const exportSlide = async (target: AlbumExportTarget) => {
-    if (!target.ref.current) {
+    const node = target.ref.current
+    if (!node) {
       throw new Error(`${target.label} is not ready yet.`)
     }
+
+    if (import.meta.env.DEV) {
+      console.info('[WaveeRating Export]', {
+        type: target.key,
+        entityId: album.id,
+        imageUrl: album.imageUrl || null,
+      })
+    }
+
+    await waitForImages(node)
 
     const exportStyle = {
       width: `${EXPORT_SLIDE_WIDTH}px`,
@@ -101,7 +133,7 @@ export default function ExportButtons({ album, style, targets, orderedTargets }:
       '--slide-radius': `${style.borderRadius}px`,
     } as Partial<CSSStyleDeclaration> & Record<string, string>
 
-    const dataUrl = await toPng(target.ref.current, {
+    const dataUrl = await toPng(node, {
       cacheBust: true,
       skipFonts: true,
       pixelRatio: 1,
@@ -128,11 +160,11 @@ export default function ExportButtons({ album, style, targets, orderedTargets }:
     setError(null)
 
     try {
-      const dimensions = await exportSlide(target)
-      setMessage(`${target.label} exported (${dimensions.width}x${dimensions.height}).`)
+      await exportSlide(target)
+      setMessage('PNG exported.')
     } catch (err) {
       console.error('[Instagram Export] Failed:', err)
-      setError((err as Error)?.message || 'Export failed. Try again.')
+      setError('Could not export PNG. Try again.')
     } finally {
       setExporting(null)
     }
@@ -151,10 +183,10 @@ export default function ExportButtons({ album, style, targets, orderedTargets }:
       for (const target of exportTargets) {
         await exportSlide(target)
       }
-      setMessage(`All slides exported (${EXPORT_SLIDE_WIDTH}x${EXPORT_SLIDE_HEIGHT}).`)
+      setMessage('PNG exported.')
     } catch (err) {
       console.error('[Instagram Export] Export all failed:', err)
-      setError((err as Error)?.message || 'Export all failed. Try again.')
+      setError('Could not export PNG. Try again.')
     } finally {
       setExporting(null)
     }
@@ -165,7 +197,7 @@ export default function ExportButtons({ album, style, targets, orderedTargets }:
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-white">Export PNG</h2>
-          <p className="mt-1 text-sm text-gray-400">1080x1350 Instagram slides.</p>
+          <p className="mt-1 text-sm text-gray-400">1080x1350 Instagram-ready slides.</p>
         </div>
         {exporting && <Loader2 className="h-5 w-5 animate-spin text-pink-300" />}
       </div>

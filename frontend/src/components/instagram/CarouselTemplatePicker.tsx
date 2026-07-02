@@ -2,10 +2,10 @@ import { CarouselStylePreset, SlideTemplate, SlideTemplateId } from '../../types
 
 export const SLIDE_TEMPLATES: SlideTemplate[] = [
   {
-    id: 'classic-cover',
+    id: 'signature-cover',
     name: 'Signature Cover',
     slideType: 'cover',
-    layout: 'classic',
+    layout: 'signature',
     fontStyle: 'bold',
     coverPosition: 'center',
     scoreStyle: 'badge',
@@ -71,10 +71,10 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
 
 export const CAROUSEL_STYLE_PRESETS: CarouselStylePreset[] = [
   {
-    id: 'classic-purple',
+    id: 'signature-purple',
     name: 'Signature Purple',
     description: 'WaveeRating energy: large cover, strong shadow, big score.',
-    templateId: 'classic-cover',
+    templateId: 'signature-cover',
     theme: {
       backgroundColor: '#4c1d95',
       cardColor: '#1f1833',
@@ -94,7 +94,7 @@ export const CAROUSEL_STYLE_PRESETS: CarouselStylePreset[] = [
   {
     id: 'minimal-editorial',
     name: 'Minimal Editorial',
-    description: 'Bright, spacious, calmer magazine-style carousel.',
+    description: 'Bright, spacious, calmer magazine-style slide.',
     templateId: 'editorial-review',
     theme: {
       backgroundColor: '#f5efe1',
@@ -147,7 +147,7 @@ interface CarouselTemplatePickerProps {
 export default function CarouselTemplatePicker({ selectedId, onSelect }: CarouselTemplatePickerProps) {
   return (
     <div>
-      <p className="mb-3 text-sm font-semibold text-gray-300">Carousel Style / Template</p>
+      <p className="mb-3 text-sm font-semibold text-gray-300">Slide Style / Template</p>
       <div className="grid gap-3 md:grid-cols-3">
         {CAROUSEL_STYLE_PRESETS.map((preset) => (
           <button

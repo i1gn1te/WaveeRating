@@ -6,6 +6,7 @@ import { getSongReview, updateSongReview } from '../lib/instagramReviewsApi'
 import { ReviewTheme, ReviewVisibility } from '../types/instagramReview'
 import ThemePresetPicker from '../components/instagram/ThemePresetPicker'
 import { clampRatingScore, scoreColor } from '../components/instagram/RatingSlider'
+import usePageTitle from '../hooks/usePageTitle'
 
 interface SavedSongReviewEditData {
   id: string
@@ -52,6 +53,7 @@ export default function InstagramSongReviewEdit() {
   const [visibility, setVisibility] = useState<ReviewVisibility>('public')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  usePageTitle('Edit Song Review')
 
   const reviewQuery = useQuery<SavedSongReviewEditData>({
     queryKey: ['instagram-profile-song-edit', id],
@@ -86,7 +88,7 @@ export default function InstagramSongReviewEdit() {
         visibility,
       }),
     onSuccess: (_data, isDraft) => {
-      setMessage(isDraft ? 'Draft updated.' : 'Review saved to profile.')
+      setMessage(isDraft ? 'Draft saved.' : 'Review saved to your profile.')
       setError(null)
     },
     onError: (err: any) => {
@@ -109,12 +111,19 @@ export default function InstagramSongReviewEdit() {
     return (
       <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
         <div className="mx-auto max-w-3xl rounded-xl border border-red-800 bg-red-950/40 p-8">
-          <Link to="/instagram/profile" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
+          <Link to="/library" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Back to library
           </Link>
           <h1 className="text-2xl font-bold text-red-100">Song review cannot load.</h1>
           <p className="mt-3 text-red-100/80">{(reviewQuery.error as any)?.response?.data?.error || 'Review not found.'}</p>
+          <button
+            type="button"
+            onClick={() => reviewQuery.refetch()}
+            className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+          >
+            Retry
+          </button>
         </div>
       </main>
     )
@@ -124,11 +133,11 @@ export default function InstagramSongReviewEdit() {
     <main className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to={`/instagram/profile/songs/${review.id}`} className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to={`/library/songs/${review.id}`} className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Back to song review
           </Link>
-          <Link to="/instagram/profile" className="text-sm text-gray-400 transition hover:text-white">
+          <Link to="/library" className="text-sm text-gray-400 transition hover:text-white">
             Library
           </Link>
         </nav>

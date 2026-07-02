@@ -1,12 +1,14 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Loader2, Music2 } from 'lucide-react'
+import { ArrowLeft, Copy, Loader2, Music2 } from 'lucide-react'
 import { getPublicSongReview } from '../lib/publicReviewsApi'
 import { ReviewArtist, ReviewTheme, ReviewVisibility, SlideTemplateId, SlideTextSettings, SONG_RATING_CATEGORIES, SongDraftTrackData } from '../types/instagramReview'
 import SongExportButton from '../components/instagram/SongExportButton'
 import SongReviewSlidePreview from '../components/instagram/SongReviewSlidePreview'
 import CarouselZipExportButton from '../components/instagram/CarouselZipExportButton'
+import { copyTextToClipboard } from '../lib/clipboard'
+import usePageTitle from '../hooks/usePageTitle'
 
 interface PublicAuthor {
   username?: string | null
@@ -80,12 +82,14 @@ function formatDuration(durationMs?: number | null) {
 }
 
 function authorLabel(author?: PublicAuthor) {
-  return author?.displayName || author?.username || 'Wavee user'
+  return author?.displayName || author?.username || 'WaveeRating user'
 }
 
 export default function PublicSongReview() {
   const { id } = useParams()
   const songSlideRef = useRef<HTMLDivElement>(null)
+  const [copyMessage, setCopyMessage] = useState<string | null>(null)
+  const [copyError, setCopyError] = useState<string | null>(null)
   const reviewQuery = useQuery<PublicSongReviewData>({
     queryKey: ['public-song-review', id],
     queryFn: () => getPublicSongReview(id || '').then((res) => res.data),
@@ -94,6 +98,7 @@ export default function PublicSongReview() {
   })
 
   const review = reviewQuery.data
+  usePageTitle(review ? `${review.trackTitle} Review` : 'Song Review')
   const style = review?.theme || FALLBACK_THEME
   const categoryRatings = (review?.ratingData?.categoryRatings || {}) as Record<string, number>
   const templateId = (review?.slideData?.templateId || review?.ratingData?.templateId) as SlideTemplateId | undefined
@@ -116,6 +121,18 @@ export default function PublicSongReview() {
     }
   }, [review])
 
+  const handleCopyReviewLink = async () => {
+    setCopyMessage(null)
+    setCopyError(null)
+
+    try {
+      await copyTextToClipboard(window.location.href)
+      setCopyMessage('Link copied.')
+    } catch (err) {
+      setCopyError((err as Error)?.message || 'Copy failed. Copy the URL from your browser address bar.')
+    }
+  }
+
   if (reviewQuery.isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-950 text-white">
@@ -128,12 +145,19 @@ export default function PublicSongReview() {
     return (
       <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
         <div className="mx-auto max-w-3xl rounded-xl border border-red-800 bg-red-950/40 p-8">
-          <Link to="/instagram" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
+          <Link to="/" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             WaveeRating
           </Link>
           <h1 className="text-2xl font-bold text-red-100">Song review cannot load.</h1>
           <p className="mt-3 text-red-100/80">{(reviewQuery.error as any)?.response?.data?.error || 'Review not found.'}</p>
+          <button
+            type="button"
+            onClick={() => reviewQuery.refetch()}
+            className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+          >
+            Retry
+          </button>
         </div>
       </main>
     )
@@ -143,7 +167,7 @@ export default function PublicSongReview() {
     <main className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to="/instagram" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             WaveeRating
           </Link>
@@ -176,6 +200,18 @@ export default function PublicSongReview() {
                 <p className="mt-4 text-sm text-gray-500">
                   by {review.user?.username ? <Link className="text-cyan-200 hover:text-cyan-100" to={`/u/${review.user.username}`}>{authorLabel(review.user)}</Link> : authorLabel(review.user)}
                 </p>
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCopyReviewLink}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-700 px-4 py-2 text-sm font-bold text-gray-100 transition hover:border-cyan-300"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy review link
+                  </button>
+                  {copyMessage && <span className="text-sm text-emerald-200">{copyMessage}</span>}
+                  {copyError && <span className="text-sm text-red-200">{copyError}</span>}
+                </div>
                 <p className="mt-6 text-6xl font-black text-cyan-200">{review.finalScore.toFixed(1)}</p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <Stat label="Album" value={review.albumTitle || 'Unknown album'} />

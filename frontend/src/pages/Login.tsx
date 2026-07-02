@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { API_BASE_URL, getLoginUrl, localLogin, register } from '../lib/api'
 import { Loader2, Music } from 'lucide-react'
 import { queryClient } from '../main'
+import usePageTitle from '../hooks/usePageTitle'
 
 export default function Login() {
   const { isAuthenticated, refetchUser } = useAuth()
@@ -15,10 +16,17 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
+  usePageTitle(authMode === 'register' ? 'Register' : 'Login')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const errorParam = params.get('error')
+    const modeParam = params.get('mode')
+
+    if (modeParam === 'register') {
+      setAuthMode('register')
+    }
+
     if (errorParam) {
       const errorMessages: Record<string, string> = {
         auth_failed: 'Spotify login failed. Try again.',
@@ -31,7 +39,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/classic/dashboard')
+      navigate('/library')
     }
   }, [isAuthenticated, navigate])
 
@@ -70,7 +78,7 @@ export default function Login() {
         await localLogin({ email, password })
       }
       await refetchUser()
-      navigate('/classic/dashboard')
+      navigate('/library')
     } catch (error) {
       setError((error as any)?.response?.data?.error || 'Authentication failed. Check credentials and backend configuration.')
     } finally {
@@ -94,7 +102,7 @@ export default function Login() {
 
       if (response.ok) {
         await refetchUser()
-        navigate('/classic/dashboard')
+        navigate('/library')
       } else {
         const body = await response.json()
         setError(body.error || 'Demo login failed.')

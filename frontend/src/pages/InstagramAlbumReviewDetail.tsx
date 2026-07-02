@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Disc3, Edit3, Loader2, Trash2 } from 'lucide-react'
@@ -14,6 +14,7 @@ import {
 } from '../components/instagram/SlidePreviews'
 import ExportButtons from '../components/instagram/ExportButtons'
 import CarouselZipExportButton from '../components/instagram/CarouselZipExportButton'
+import usePageTitle from '../hooks/usePageTitle'
 
 interface SavedAlbumReviewDetail {
   id: string
@@ -94,6 +95,7 @@ export default function InstagramAlbumReviewDetail() {
   const albumReviewSlideRef = useRef<HTMLDivElement>(null)
   const bestTrackSlideRef = useRef<HTMLDivElement>(null)
   const weakestTrackSlideRef = useRef<HTMLDivElement>(null)
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null)
   const reviewQuery = useQuery<SavedAlbumReviewDetail>({
     queryKey: ['instagram-profile-album-detail', id],
     queryFn: () => getAlbumReview(id || '').then((res) => res.data),
@@ -101,10 +103,14 @@ export default function InstagramAlbumReviewDetail() {
   })
   const deleteMutation = useMutation({
     mutationFn: deleteAlbumReview,
-    onSuccess: () => navigate('/instagram/profile'),
+    onSuccess: () => {
+      setDeleteMessage('Review deleted.')
+      window.setTimeout(() => navigate('/library'), 500)
+    },
   })
 
   const review = reviewQuery.data
+  usePageTitle(review ? `${review.albumTitle} Review` : 'Saved Album Review')
   const style = review?.theme || FALLBACK_THEME
   const trackRatings = useMemo<TrackRating[]>(() => {
     const value = review?.ratingData?.trackRatings
@@ -138,12 +144,19 @@ export default function InstagramAlbumReviewDetail() {
     return (
       <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
         <div className="mx-auto max-w-3xl rounded-xl border border-red-800 bg-red-950/40 p-8">
-          <Link to="/instagram/profile" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
+          <Link to="/library" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Back to library
           </Link>
           <h1 className="text-2xl font-bold text-red-100">Album review cannot load.</h1>
           <p className="mt-3 text-red-100/80">{(reviewQuery.error as any)?.response?.data?.error || 'Review not found.'}</p>
+          <button
+            type="button"
+            onClick={() => reviewQuery.refetch()}
+            className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+          >
+            Retry
+          </button>
         </div>
       </main>
     )
@@ -159,12 +172,12 @@ export default function InstagramAlbumReviewDetail() {
     <main className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to="/instagram/profile" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/library" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Back to Library
           </Link>
           <div className="flex flex-wrap items-center gap-3">
-            <Link to={`/instagram/profile/albums/${review.id}/edit`} className="inline-flex items-center gap-2 rounded-lg border border-gray-700 px-4 py-2 text-sm font-semibold text-gray-100 transition hover:border-pink-300">
+            <Link to={`/library/albums/${review.id}/edit`} className="inline-flex items-center gap-2 rounded-lg border border-gray-700 px-4 py-2 text-sm font-semibold text-gray-100 transition hover:border-pink-300">
               <Edit3 className="h-4 w-4" />
               Edit
             </Link>
@@ -179,6 +192,7 @@ export default function InstagramAlbumReviewDetail() {
             </button>
           </div>
         </nav>
+        {deleteMessage && <p className="mb-6 rounded-lg border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-100">{deleteMessage}</p>}
 
         <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
           <div className="space-y-8">

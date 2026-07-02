@@ -1,6 +1,7 @@
 import { CSSProperties, ForwardedRef, forwardRef, ReactNode, useEffect, useRef, useState } from 'react'
 import { getSpotifyImageProxyUrl } from '../../lib/api'
 import { ReviewTheme, SlideTemplateId, SlideTextSettings, TrackRating } from '../../types/instagramReview'
+import { getCoverSize, getReviewBodySize, getTitleSize } from '../../lib/slideLayout'
 import CategoryBreakdown from './CategoryBreakdown'
 import ScoreBadge from './ScoreBadge'
 import ScoreBar from './ScoreBar'
@@ -139,7 +140,7 @@ function SlideShell({
   children,
   refValue,
   eyebrow = 'WaveeRating Review',
-  templateId = 'classic-cover',
+  templateId = 'signature-cover',
   textSettings,
 }: SlideProps & { children: ReactNode; refValue: ForwardedRef<HTMLDivElement>; eyebrow?: string }) {
   const radius = clampRadius(style.borderRadius)
@@ -201,7 +202,16 @@ function SlideShell({
   return (
     <div ref={frameRef} className="relative w-full overflow-hidden" style={frameStyle}>
       <div className="absolute left-0 top-0" style={scaleStyle} aria-hidden={false}>
-        <div ref={refValue} data-export-slide="true" className="isolate bg-gray-950" style={canvasStyle}>
+        <div
+          ref={refValue}
+          data-export-slide="true"
+          data-export-type="album-slide"
+          data-entity-id={album.id}
+          data-image-url={album.imageUrl || ''}
+          data-template-id={templateId}
+          className="isolate bg-gray-950"
+          style={canvasStyle}
+        >
           <div className="pointer-events-none absolute inset-0" style={{ background: decoration, opacity: isEditorial(templateId) ? 0.32 : 0.2 }} />
           <div className="relative flex h-full flex-col justify-between p-[6.4%]">
             <header className="min-h-0">
@@ -215,7 +225,7 @@ function SlideShell({
               >
                 {heading(eyebrow, text)}
               </p>
-              <h3 className="mt-[1.8%] max-h-[2.25em] font-black leading-[0.96]" style={{ fontSize: titleSize(text), ...lineClamp(2) }}>
+              <h3 className="mt-[1.8%] max-h-[2.25em] font-black leading-[0.96]" style={{ fontSize: getTitleSize(album.title || album.name, titleSize(text)), ...lineClamp(2) }}>
                 {album.title || album.name}
               </h3>
               <p className="mt-[2%] max-h-[1.4em] font-semibold opacity-80" style={{ fontSize: '2.8cqw', ...lineClamp(1) }}>
@@ -237,7 +247,16 @@ function CoverImage({
 }: SlideProps & { size?: 'large' | 'small' | 'track' | 'editorial' }) {
   const radius = clampRadius(style.borderRadius)
   const proxiedCover = getSpotifyImageProxyUrl(album.imageUrl)
-  const width = size === 'large' ? '78%' : size === 'track' ? '34%' : size === 'editorial' ? '44%' : '22%'
+  const title = album.title || album.name
+  const subtitle = artistLine(album)
+  const width =
+    size === 'large'
+      ? getCoverSize(title, subtitle, 'hero')
+      : size === 'track'
+        ? getCoverSize(title, subtitle, 'track')
+        : size === 'editorial'
+          ? getCoverSize(title, subtitle, 'editorial')
+          : getCoverSize(title, subtitle, 'small')
 
   return (
     <div
@@ -267,23 +286,40 @@ function CoverImage({
 }
 
 export const CoverSlidePreview = forwardRef<HTMLDivElement, SlideProps>(function CoverSlidePreview(
-  { album, style, templateId = 'classic-cover', textSettings },
+  { album, style, templateId = 'signature-cover', textSettings },
   ref
 ) {
   if (isEditorial(templateId)) {
     return (
-      <SlideShell album={album} style={style} refValue={ref} eyebrow="Instagram Review" templateId={templateId} textSettings={textSettings}>
-        <section className="flex flex-1 items-center gap-[6%] py-[4%]">
+      <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings}>
+        <section className="grid min-h-0 flex-1 grid-cols-[auto_1fr] items-center gap-[6%] py-[4%]">
           <CoverImage album={album} style={style} size="editorial" />
           <div className="min-w-0 flex-1">
-            <p className="font-black leading-[0.98]" style={{ fontSize: titleSize(textSettings, '7.4cqw'), ...lineClamp(3) }}>
-              {album.title || album.name}
+            <p className="font-black leading-[1.02]" style={{ fontSize: getTitleSize('Release notes', '5.2cqw'), ...lineClamp(2) }}>
+              {releaseYear(album) ? `Released ${releaseYear(album)}` : 'Album / EP'}
             </p>
-            <p className="mt-[4%] font-semibold opacity-75" style={{ fontSize: '3.2cqw', ...lineClamp(2) }}>
+            <p className="mt-[4%] font-semibold opacity-75" style={{ fontSize: '3.1cqw', ...lineClamp(3) }}>
+              {album.totalTracks ? `${album.totalTracks} tracks` : 'Ready for a full album review'}
+            </p>
+          </div>
+        </section>
+      </SlideShell>
+    )
+  }
+
+  if (isPoster(templateId)) {
+    return (
+      <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings}>
+        <section className="grid min-h-0 flex-1 grid-rows-[1fr_auto] gap-[4%] py-[3%] text-center">
+          <div className="flex min-h-0 items-center justify-center">
+          <CoverImage album={album} style={style} size="large" />
+          </div>
+          <div>
+            <p className="font-black tracking-[0.16em]" style={{ color: style.accentColor, fontSize: '2.85cqw', ...lineClamp(1) }}>
               {artistLine(album)}
             </p>
             {releaseYear(album) && (
-              <p className="mt-[5%] font-black tracking-[0.16em]" style={{ color: style.accentColor, fontSize: '2.1cqw' }}>
+              <p className="mt-[2%] font-black uppercase tracking-[0.26em]" style={{ fontSize: '2.15cqw' }}>
                 {releaseYear(album)}
               </p>
             )}
@@ -293,33 +329,14 @@ export const CoverSlidePreview = forwardRef<HTMLDivElement, SlideProps>(function
     )
   }
 
-  if (isPoster(templateId)) {
-    return (
-      <SlideShell album={album} style={style} refValue={ref} eyebrow="Instagram Review" templateId={templateId} textSettings={textSettings}>
-        <section className="flex flex-1 flex-col justify-end gap-[5%] py-[3%]">
-          <CoverImage album={album} style={style} size="large" />
-          <div>
-            <p className="font-black uppercase leading-[0.86]" style={{ fontSize: '10.2cqw', ...lineClamp(3) }}>
-              {album.title || album.name}
-            </p>
-            <p className="mt-[3%] font-black tracking-[0.16em]" style={{ color: style.accentColor, fontSize: '3cqw', ...lineClamp(1) }}>
-              {artistLine(album)}
-            </p>
-          </div>
-        </section>
-      </SlideShell>
-    )
-  }
-
   return (
-    <SlideShell album={album} style={style} refValue={ref} eyebrow="Instagram Review" templateId={templateId} textSettings={textSettings}>
-      <section className="flex flex-1 flex-col items-center justify-center gap-[7%] py-[3%] text-center">
+    <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings}>
+      <section className="grid min-h-0 flex-1 grid-rows-[1fr_auto] gap-[4%] py-[3%] text-center">
+        <div className="flex min-h-0 items-center justify-center">
         <CoverImage album={album} style={style} />
+        </div>
         <div className="w-full">
-          <p className="font-black leading-[0.95]" style={{ fontSize: titleSize(textSettings, '8.2cqw'), ...lineClamp(2) }}>
-            {album.title || album.name}
-          </p>
-          <p className="mt-[3%] font-bold opacity-82" style={{ fontSize: '3.7cqw', ...lineClamp(1) }}>
+          <p className="font-bold opacity-82" style={{ fontSize: '3.3cqw', ...lineClamp(1) }}>
             {artistLine(album)}
           </p>
           {releaseYear(album) && (
@@ -334,7 +351,7 @@ export const CoverSlidePreview = forwardRef<HTMLDivElement, SlideProps>(function
 })
 
 export const AlbumReviewSlidePreview = forwardRef<HTMLDivElement, ReviewSlideProps>(function AlbumReviewSlidePreview(
-  { album, style, finalScore, verdict, review, recommendation, categoryRatings, templateId = 'classic-cover', textSettings },
+  { album, style, finalScore, verdict, review, recommendation, categoryRatings, templateId = 'signature-cover', textSettings },
   ref
 ) {
   const radius = clampRadius(style.borderRadius)
@@ -353,7 +370,7 @@ export const AlbumReviewSlidePreview = forwardRef<HTMLDivElement, ReviewSlidePro
             className="min-h-0 border p-[5.2%]"
             style={{ borderColor: `${style.accentColor}88`, borderRadius: radius, backgroundColor: `${style.cardColor}dd` }}
           >
-            <p className="font-semibold leading-[1.16] opacity-90" style={{ fontSize: bodySize(textSettings, '3.15cqw'), ...lineClamp(11) }}>
+            <p className="font-semibold leading-[1.16] opacity-90" style={{ fontSize: getReviewBodySize(review, bodySize(textSettings, '3.15cqw')), ...lineClamp(11) }}>
               {review || 'Write a clear album review here. Keep it sharp, visual, and ready for an Instagram carousel.'}
             </p>
           </div>
@@ -379,7 +396,7 @@ export const AlbumReviewSlidePreview = forwardRef<HTMLDivElement, ReviewSlidePro
             <ScoreBadge score={finalScore} size="md" textColor={`${style.textColor}b8`} mutedColor={`${style.textColor}22`} />
           </div>
           <div className="min-h-0 p-[5.2%]" style={{ backgroundColor: style.cardColor, borderRadius: radius }}>
-            <p className="font-medium leading-[1.28] opacity-90" style={{ fontSize: bodySize(textSettings, '3.15cqw'), ...lineClamp(9) }}>
+            <p className="font-medium leading-[1.28] opacity-90" style={{ fontSize: getReviewBodySize(review, bodySize(textSettings, '3.15cqw')), ...lineClamp(9) }}>
               {review || 'Write a clear album review here. Keep it sharp, visual, and ready for an Instagram carousel.'}
             </p>
           </div>
@@ -419,7 +436,7 @@ export const AlbumReviewSlidePreview = forwardRef<HTMLDivElement, ReviewSlidePro
             boxShadow: `0 22px ${style.shadowIntensity + 12}px rgba(0,0,0,0.3)`,
           }}
         >
-          <p className="font-medium leading-[1.24] opacity-90" style={{ fontSize: bodySize(textSettings), ...lineClamp(10) }}>
+          <p className="font-medium leading-[1.24] opacity-90" style={{ fontSize: getReviewBodySize(review, bodySize(textSettings)), ...lineClamp(10) }}>
             {review || 'Write a clear album review here. Keep it sharp, visual, and ready for an Instagram carousel.'}
           </p>
         </div>
@@ -508,7 +525,7 @@ export const TrackRatingsSummarySlidePreview = forwardRef<HTMLDivElement, TrackR
 })
 
 export const BestTrackSlidePreview = forwardRef<HTMLDivElement, TrackSlideProps>(function BestTrackSlidePreview(
-  { album, style, track, score, text, templateId = 'classic-cover', textSettings },
+  { album, style, track, score, text, templateId = 'signature-cover', textSettings },
   ref
 ) {
   return (
@@ -527,7 +544,7 @@ export const BestTrackSlidePreview = forwardRef<HTMLDivElement, TrackSlideProps>
 })
 
 export const WorstTrackSlidePreview = forwardRef<HTMLDivElement, TrackSlideProps>(function WorstTrackSlidePreview(
-  { album, style, track, score, text, templateId = 'classic-cover', textSettings },
+  { album, style, track, score, text, templateId = 'signature-cover', textSettings },
   ref
 ) {
   return (
@@ -553,7 +570,7 @@ function TrackSlidePreview({
   text,
   label,
   refValue,
-  templateId = 'classic-cover',
+  templateId = 'signature-cover',
   textSettings,
 }: TrackSlideProps & { label: string; refValue: ForwardedRef<HTMLDivElement> }) {
   const radius = clampRadius(style.borderRadius)

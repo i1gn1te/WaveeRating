@@ -52,14 +52,14 @@ export interface ReviewListParams {
   offset?: number
 }
 
-export const saveAlbumReview = (payload: AlbumReviewPayload) => api.post('/instagram-reviews/albums', payload)
-export const getAlbumReviews = (params: ReviewListParams = {}) => api.get('/instagram-reviews/albums', { params })
-export const getAlbumReview = (id: string) => api.get(`/instagram-reviews/albums/${id}`)
-export const updateAlbumReview = (id: string, payload: Partial<AlbumReviewPayload>) => api.put(`/instagram-reviews/albums/${id}`, payload)
-export const deleteAlbumReview = (id: string) => api.delete(`/instagram-reviews/albums/${id}`)
+export const saveAlbumReview = (payload: AlbumReviewPayload) => api.post('/-reviews/albums', payload)
+export const getAlbumReviews = (params: ReviewListParams = {}) => api.get('/-reviews/albums', { params })
+export const getAlbumReview = (id: string) => api.get(`/-reviews/albums/${id}`)
+export const updateAlbumReview = (id: string, payload: Partial<AlbumReviewPayload>) => api.put(`/-reviews/albums/${id}`, payload)
+export const deleteAlbumReview = (id: string) => api.delete(`/-reviews/albums/${id}`)
 
-export const saveSongReview = (payload: SongReviewPayload) => api.post('/instagram-reviews/songs', payload)
-export const getSongReviews = (params: ReviewListParams = {}) => api.get('/instagram-reviews/songs', { params })
-export const getSongReview = (id: string) => api.get(`/instagram-reviews/songs/${id}`)
-export const updateSongReview = (id: string, payload: Partial<SongReviewPayload>) => api.put(`/instagram-reviews/songs/${id}`, payload)
-export const deleteSongReview = (id: string) => api.delete(`/instagram-reviews/songs/${id}`)
+export const saveSongReview = (payload: SongReviewPayload) => api.post('/-reviews/songs', payload)
+export const getSongReviews = (params: ReviewListParams = {}) => api.get('/-reviews/songs', { params })
+export const getSongReview = (id: string) => api.get(`/-reviews/songs/${id}`)
+export const updateSongReview = (id: string, payload: Partial<SongReviewPayload>) => api.put(`/-reviews/songs/${id}`, payload)
+export const deleteSongReview = (id: string) => api.delete(`/-reviews/songs/${id}`)

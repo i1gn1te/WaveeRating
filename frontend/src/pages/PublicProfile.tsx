@@ -1,14 +1,18 @@
-import { ReactNode, useMemo } from 'react'
+import { ReactNode, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Loader2, UserPlus, UserMinus } from 'lucide-react'
+import { ArrowLeft, Copy, Loader2, UserPlus, UserMinus } from 'lucide-react'
 import { followUser, getPublicProfile, unfollowUser } from '../lib/profilesApi'
 import { useAuth } from '../contexts/AuthContext'
+import { copyTextToClipboard } from '../lib/clipboard'
+import usePageTitle from '../hooks/usePageTitle'
 
 export default function PublicProfile() {
   const { username = '' } = useParams()
   const { isAuthenticated, user } = useAuth()
   const queryClient = useQueryClient()
+  const [copyMessage, setCopyMessage] = useState<string | null>(null)
+  const [copyError, setCopyError] = useState<string | null>(null)
   const profileQuery = useQuery({
     queryKey: ['public-profile', username],
     queryFn: () => getPublicProfile(username).then((res) => res.data),
@@ -16,6 +20,7 @@ export default function PublicProfile() {
     retry: false,
   })
   const profile = profileQuery.data
+  usePageTitle(profile ? `${profile.displayName || profile.username}` : username ? `@${username}` : 'Public Profile')
   const isOwnProfile = profile?.isOwnProfile || user?.username === username
   const followMutation = useMutation({
     mutationFn: () => (profile?.isFollowing ? unfollowUser(username) : followUser(username)),
@@ -27,8 +32,22 @@ export default function PublicProfile() {
     return [...albums, ...songs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [profile])
 
+  const handleCopyProfileLink = async () => {
+    setCopyMessage(null)
+    setCopyError(null)
+
+    try {
+      await copyTextToClipboard(window.location.href)
+      setCopyMessage('Link copied.')
+    } catch (err) {
+      setCopyError((err as Error)?.message || 'Copy failed. Copy the URL from your browser address bar.')
+    }
+  }
+
   if (profileQuery.isLoading) return <Loading />
-  if (!profile || profileQuery.isError) return <ErrorState message={(profileQuery.error as any)?.response?.data?.error || 'Profile not found.'} />
+  if (!profile || profileQuery.isError) {
+    return <ErrorState message={(profileQuery.error as any)?.response?.data?.error || 'Profile not found.'} onRetry={() => profileQuery.refetch()} />
+  }
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -48,6 +67,14 @@ export default function PublicProfile() {
             </div>
           </div>
           <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={handleCopyProfileLink}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-700 px-4 py-2 text-center text-sm font-bold text-gray-100 hover:border-cyan-300"
+            >
+              <Copy className="h-4 w-4" />
+              Copy profile link
+            </button>
             {isOwnProfile ? (
               <Link to="/profile/settings" className="rounded-lg border border-gray-700 px-4 py-2 text-center text-sm font-bold text-gray-100 hover:border-pink-300">
                 Edit profile
@@ -63,10 +90,12 @@ export default function PublicProfile() {
                 {profile.isFollowing ? 'Unfollow' : 'Follow'}
               </button>
             ) : (
-              <Link to="/classic/login" className="rounded-lg border border-gray-700 px-4 py-2 text-center text-sm font-bold text-gray-100 hover:border-pink-300">
+              <Link to="/login" className="rounded-lg border border-gray-700 px-4 py-2 text-center text-sm font-bold text-gray-100 hover:border-pink-300">
                 Login to follow
               </Link>
             )}
+            {copyMessage && <p className="text-sm text-emerald-200">{copyMessage}</p>}
+            {copyError && <p className="text-sm text-red-200">{copyError}</p>}
           </div>
         </section>
 
@@ -93,12 +122,12 @@ export default function PublicProfile() {
 export function TopNav() {
   return (
     <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
-      <Link to="/instagram/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white">
+      <Link to="/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white">
         <ArrowLeft className="h-4 w-4" />
         Rate
       </Link>
       <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-        <Link to="/instagram/profile" className="hover:text-white">My Library</Link>
+        <Link to="/library" className="hover:text-white">My Library</Link>
         <Link to="/feed" className="hover:text-white">Feed</Link>
         <Link to="/profile/settings" className="hover:text-white">Profile Settings</Link>
       </div>
@@ -170,13 +199,22 @@ export function Loading() {
   )
 }
 
-export function ErrorState({ message }: { message: string }) {
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
       <div className="mx-auto max-w-3xl rounded-xl border border-red-800 bg-red-950/40 p-8">
         <TopNav />
         <h1 className="text-2xl font-bold text-red-100">Could not load this page.</h1>
         <p className="mt-3 text-red-100/80">{message}</p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+          >
+            Retry
+          </button>
+        )}
       </div>
     </main>
   )

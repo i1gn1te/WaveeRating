@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Disc3, Loader2, Music2, Search as SearchIcon } from 'lucide-react'
 import { searchPublicTracks } from '../lib/api'
 import { SongDraftTrackData } from '../types/instagramReview'
+import usePageTitle from '../hooks/usePageTitle'
 
 function formatDuration(durationMs?: number) {
   if (!durationMs) {
@@ -24,8 +25,9 @@ export default function SongRatingHome() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  usePageTitle('Rate Song')
 
-  const { data: tracks, isLoading, isFetching, isError, error } = useQuery<SongDraftTrackData[]>({
+  const { data: tracks, isLoading, isFetching, isError, error, refetch } = useQuery<SongDraftTrackData[]>({
     queryKey: ['instagram-song-search', searchTerm],
     queryFn: () => searchPublicTracks(searchTerm).then((res) => res.data),
     enabled: searchTerm.length > 0,
@@ -41,18 +43,18 @@ export default function SongRatingHome() {
 
   const handleTrackClick = (track: SongDraftTrackData) => {
     console.log('[WaveeRating] selected song ID:', track.id)
-    navigate(`/instagram/songs/${track.id}`)
+    navigate(`/songs/${track.id}`)
   }
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to="/instagram/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Rate menu
           </Link>
-          <Link to="/instagram/albums" className="text-sm text-gray-400 transition hover:text-white">
+          <Link to="/albums" className="text-sm text-gray-400 transition hover:text-white">
             Albums / EPs
           </Link>
         </nav>
@@ -64,7 +66,7 @@ export default function SongRatingHome() {
           </div>
           <h1 className="text-3xl font-bold tracking-normal text-white sm:text-4xl">Search Spotify songs</h1>
           <p className="mt-3 max-w-2xl text-gray-400">
-            Pick one track, rate it with quick or detailed scoring, then export a single-song Instagram review slide.
+            Pick one track, rate it with quick or detailed scoring, then export a single-song share-ready review slide.
           </p>
         </section>
 
@@ -127,9 +129,9 @@ export default function SongRatingHome() {
           </div>
         )}
 
-        {searchTerm && tracks && tracks.length === 0 && (
+        {searchTerm && !isError && tracks && tracks.length === 0 && (
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-10 text-center text-gray-400">
-            No songs found for "{searchTerm}".
+            No songs found.
           </div>
         )}
 
@@ -139,6 +141,13 @@ export default function SongRatingHome() {
             <p className="mt-2 text-sm text-red-200/70">
               {(error as any)?.response?.data?.error || 'Spotify API is not configured. Add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to backend .env.'}
             </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-5 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+            >
+              Retry
+            </button>
           </div>
         )}
 

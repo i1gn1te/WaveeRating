@@ -38,15 +38,57 @@ function getImageDimensions(dataUrl: string) {
   })
 }
 
+function waitForImages(node: HTMLElement) {
+  const images = Array.from(node.querySelectorAll('img'))
+
+  return Promise.all(
+    images.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          if (image.complete && image.naturalWidth > 0) {
+            resolve()
+            return
+          }
+
+          const done = () => resolve()
+          image.addEventListener('load', done, { once: true })
+          image.addEventListener('error', done, { once: true })
+          window.setTimeout(done, 3000)
+        })
+    )
+  )
+}
+
 export default function SongExportButton({ track, style, targetRef }: SongExportButtonProps) {
   const [exporting, setExporting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const exportSongReview = async () => {
-    if (!targetRef.current) {
+    const node = targetRef.current
+    if (!node) {
       throw new Error('Song Review Slide is not ready yet.')
     }
+
+    if (node.dataset.exportType && node.dataset.exportType !== 'song-review') {
+      throw new Error('Song export is pointed at the wrong slide.')
+    }
+
+    if (node.dataset.entityId && node.dataset.entityId !== track.id) {
+      throw new Error('Song export slide is stale. Wait a moment and try again.')
+    }
+
+    if (import.meta.env.DEV) {
+      console.info('[WaveeRating Export]', {
+        type: 'song-review',
+        entityId: track.id,
+        imageUrl: track.imageUrl || null,
+        nodeEntityId: node.dataset.entityId || null,
+        nodeImageUrl: node.dataset.imageUrl || null,
+      })
+    }
+
+    await waitForImages(node)
 
     const exportStyle = {
       width: `${EXPORT_SLIDE_WIDTH}px`,
@@ -67,7 +109,7 @@ export default function SongExportButton({ track, style, targetRef }: SongExport
       '--slide-radius': `${style.borderRadius}px`,
     } as Partial<CSSStyleDeclaration> & Record<string, string>
 
-    const dataUrl = await toPng(targetRef.current, {
+    const dataUrl = await toPng(node, {
       cacheBust: true,
       skipFonts: true,
       pixelRatio: 1,
@@ -96,11 +138,11 @@ export default function SongExportButton({ track, style, targetRef }: SongExport
     setError(null)
 
     try {
-      const dimensions = await exportSongReview()
-      setMessage(`Song Review Slide exported (${dimensions.width}x${dimensions.height}).`)
+      await exportSongReview()
+      setMessage('PNG exported.')
     } catch (err) {
       console.error('[Instagram Song Export] Failed:', err)
-      setError((err as Error)?.message || 'Export failed. Try again.')
+      setError('Could not export PNG. Try again.')
     } finally {
       setExporting(false)
     }
@@ -110,8 +152,8 @@ export default function SongExportButton({ track, style, targetRef }: SongExport
     <section className="rounded-xl border border-gray-800 bg-gray-950 p-5">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-white">Export PNG</h2>
-          <p className="mt-1 text-sm text-gray-400">1080x1350 song review slide.</p>
+          <h2 className="text-lg font-bold text-white">Song Review Export</h2>
+          <p className="mt-1 text-sm text-gray-400">Export the current 1080x1350 song review PNG.</p>
         </div>
         {exporting && <Loader2 className="h-5 w-5 animate-spin text-cyan-200" />}
       </div>
@@ -123,7 +165,7 @@ export default function SongExportButton({ track, style, targetRef }: SongExport
         className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-400 px-4 py-3 text-sm font-bold text-gray-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-        {exporting ? 'Exporting...' : 'Song Review Slide'}
+        {exporting ? 'Exporting...' : 'Export Song Review PNG'}
       </button>
 
       {message && <p className="mt-4 rounded-lg border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-100">{message}</p>}

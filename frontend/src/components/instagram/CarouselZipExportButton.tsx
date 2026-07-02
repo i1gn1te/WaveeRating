@@ -9,6 +9,9 @@ export interface ZipSlideTarget {
   filename: string
   label: string
   ref: RefObject<HTMLDivElement>
+  entityId?: string
+  imageUrl?: string | null
+  type?: string
 }
 
 interface CarouselZipExportButtonProps {
@@ -33,10 +36,42 @@ function dataUrlToBase64(dataUrl: string) {
   return dataUrl.split(',')[1] || ''
 }
 
-async function exportSlide(ref: RefObject<HTMLDivElement>, style: ReviewTheme) {
+function waitForImages(node: HTMLElement) {
+  const images = Array.from(node.querySelectorAll('img'))
+
+  return Promise.all(
+    images.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          if (image.complete && image.naturalWidth > 0) {
+            resolve()
+            return
+          }
+
+          const done = () => resolve()
+          image.addEventListener('load', done, { once: true })
+          image.addEventListener('error', done, { once: true })
+          window.setTimeout(done, 3000)
+        })
+    )
+  )
+}
+
+async function exportSlide(target: ZipSlideTarget, style: ReviewTheme) {
+  const ref = target.ref
   if (!ref.current) {
     throw new Error('One of the slides is not ready yet.')
   }
+
+  if (import.meta.env.DEV) {
+    console.info('[WaveeRating Export]', {
+      type: target.type || target.label,
+      entityId: target.entityId || ref.current.dataset.entityId || null,
+      imageUrl: target.imageUrl || ref.current.dataset.imageUrl || null,
+    })
+  }
+
+  await waitForImages(ref.current)
 
   const exportStyle = {
     width: `${EXPORT_SLIDE_WIDTH}px`,
@@ -88,16 +123,16 @@ export default function CarouselZipExportButton({ label = 'Export Carousel ZIP',
       const zip = new JSZip()
 
       for (const target of targets) {
-        const dataUrl = await exportSlide(target.ref, style)
+        const dataUrl = await exportSlide(target, style)
         zip.file(target.filename, dataUrlToBase64(dataUrl), { base64: true })
       }
 
       const blob = await zip.generateAsync({ type: 'blob' })
       downloadBlob(blob, zipFilename)
-      setMessage(`ZIP exported (${targets.length} slide${targets.length === 1 ? '' : 's'}).`)
+      setMessage('ZIP exported.')
     } catch (err) {
       console.error('[Instagram ZIP Export] Failed:', err)
-      setError((err as Error)?.message || 'ZIP export failed. Try again.')
+      setError('Could not export ZIP. Try again.')
     } finally {
       setExporting(false)
     }
@@ -120,7 +155,7 @@ export default function CarouselZipExportButton({ label = 'Export Carousel ZIP',
         className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-sm font-bold text-white transition hover:border-pink-400 hover:text-pink-100 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
-        {exporting ? 'Exporting ZIP...' : label}
+        {exporting ? 'Preparing ZIP...' : label}
       </button>
 
       {message && <p className="mt-4 rounded-lg border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-100">{message}</p>}

@@ -1,5 +1,6 @@
 import { CSSProperties, forwardRef, useEffect, useRef, useState } from 'react'
 import { getSpotifyImageProxyUrl } from '../../lib/api'
+import { getCoverSize, getReviewBodySize, getSafeText, getTitleSize } from '../../lib/slideLayout'
 import { ReviewTheme, SlideTemplateId, SlideTextSettings, SongDraftTrackData } from '../../types/instagramReview'
 import ScoreBadge from './ScoreBadge'
 import { EXPORT_SLIDE_HEIGHT, EXPORT_SLIDE_WIDTH } from './SlidePreviews'
@@ -78,14 +79,20 @@ function isPoster(templateId?: SlideTemplateId) {
 }
 
 const SongReviewSlidePreview = forwardRef<HTMLDivElement, SongReviewSlidePreviewProps>(function SongReviewSlidePreview(
-  { track, style, finalScore, verdict, review, finalNote, moodTags, templateId = 'classic-cover', textSettings },
+  { track, style, finalScore, verdict, review, finalNote, moodTags, templateId = 'signature-cover', textSettings },
   ref
 ) {
   const radius = clampRadius(style.borderRadius)
   const text = withDefaults(textSettings)
   const frameRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(1)
-  const coverUrl = getSpotifyImageProxyUrl(track.imageUrl)
+  const rawImageUrl = track.imageUrl || null
+  const coverUrl = getSpotifyImageProxyUrl(rawImageUrl) || rawImageUrl
+  const currentTrackTitle = trackTitle(track)
+  const currentArtistLine = artistLine(track)
+  const titleFontSize = getTitleSize(currentTrackTitle, isPoster(templateId) ? '9.2cqw' : titleSize(textSettings))
+  const reviewFontSize = getReviewBodySize(review, bodySize(textSettings))
+  const coverWidth = getCoverSize(currentTrackTitle, `${currentArtistLine} ${track.albumName || ''}`, isEditorial(templateId) ? 'small' : 'track')
 
   useEffect(() => {
     const frame = frameRef.current
@@ -140,7 +147,15 @@ const SongReviewSlidePreview = forwardRef<HTMLDivElement, SongReviewSlidePreview
   return (
     <div ref={frameRef} className="relative w-full overflow-hidden" style={frameStyle}>
       <div className="absolute left-0 top-0" style={scaleStyle} aria-hidden={false}>
-        <div ref={ref} data-export-slide="true" className="isolate" style={canvasStyle}>
+        <div
+          ref={ref}
+          data-export-slide="true"
+          data-export-type="song-review"
+          data-entity-id={track.id}
+          data-image-url={rawImageUrl || ''}
+          className="isolate"
+          style={canvasStyle}
+        >
           <div
             className="pointer-events-none absolute inset-0"
             style={{ background: decoration, opacity: isEditorial(templateId) ? 0.32 : 0.2 }}
@@ -154,19 +169,20 @@ const SongReviewSlidePreview = forwardRef<HTMLDivElement, SongReviewSlidePreview
               >
                 {text.uppercaseHeadings ? 'SONG REVIEW' : 'Song Review'}
               </p>
-              <h3 className="mt-[1.8%] max-h-[2.2em] font-black leading-[0.94]" style={{ fontSize: isPoster(templateId) ? '9.2cqw' : titleSize(textSettings), ...lineClamp(2) }}>
-                {trackTitle(track)}
+              <h3 className="mt-[1.8%] max-h-[2.2em] font-black leading-[0.94]" style={{ fontSize: titleFontSize, ...lineClamp(2) }}>
+                {currentTrackTitle}
               </h3>
-              <p className="mt-[2%] max-h-[1.4em] font-semibold opacity-82" style={{ fontSize: '2.8cqw', ...lineClamp(1) }}>
-                {artistLine(track)}
+              <p className="mt-[2%] max-h-[2.8em] font-semibold opacity-82" style={{ fontSize: '2.65cqw', ...lineClamp(2) }}>
+                {currentArtistLine}
               </p>
             </header>
 
             <section className="grid min-h-0 flex-1 grid-rows-[auto_1fr_auto] gap-[4.5%] pt-[6%]">
               <div className="flex items-end justify-between gap-[5%]">
                 <div
-                  className={`${isEditorial(templateId) ? 'w-[26%]' : 'w-[34%]'} shrink-0 p-[2.2%]`}
+                  className="shrink-0 p-[2.2%]"
                   style={{
+                    width: coverWidth,
                     backgroundColor: style.coverFrameColor,
                     borderRadius: radius,
                     boxShadow: `0 28px ${style.shadowIntensity + 18}px rgba(0,0,0,0.46)`,
@@ -174,6 +190,7 @@ const SongReviewSlidePreview = forwardRef<HTMLDivElement, SongReviewSlidePreview
                 >
                   {coverUrl ? (
                     <img
+                      key={`${track.id}-${rawImageUrl || 'no-cover'}`}
                       src={coverUrl}
                       alt=""
                       crossOrigin="anonymous"
@@ -188,10 +205,10 @@ const SongReviewSlidePreview = forwardRef<HTMLDivElement, SongReviewSlidePreview
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="font-black tracking-[0.18em] opacity-70" style={{ fontSize: '1.9cqw', textTransform: text.uppercaseHeadings ? 'uppercase' : 'none' }}>
-                    {track.albumName || 'Single'}
+                  <p className="font-black tracking-[0.18em] opacity-70" style={{ fontSize: '1.9cqw', textTransform: text.uppercaseHeadings ? 'uppercase' : 'none', ...lineClamp(2) }}>
+                    {getSafeText(track.albumName || 'Single', 70)}
                   </p>
-                  <p className="mt-[2%] font-black leading-[0.98]" style={{ fontSize: isPoster(templateId) ? '5.6cqw' : '4.7cqw', ...lineClamp(2) }}>
+                  <p className="mt-[2%] font-black leading-[0.98]" style={{ fontSize: getTitleSize(verdict || 'Short verdict', isPoster(templateId) ? '5.6cqw' : '4.7cqw'), ...lineClamp(2) }}>
                     {verdict || 'Short verdict'}
                   </p>
                 </div>
@@ -209,8 +226,8 @@ const SongReviewSlidePreview = forwardRef<HTMLDivElement, SongReviewSlidePreview
                   boxShadow: `0 22px ${style.shadowIntensity + 12}px rgba(0,0,0,0.3)`,
                 }}
               >
-                <p className="font-medium leading-[1.23] opacity-90" style={{ fontSize: bodySize(textSettings), ...lineClamp(10) }}>
-                  {review || 'Write a clear song review here. Keep it sharp, visual, and ready for an Instagram carousel.'}
+                <p className="font-medium leading-[1.23] opacity-90" style={{ fontSize: reviewFontSize, ...lineClamp(10) }}>
+                  {review || 'Write a clear song review here. Keep it sharp, visual, and ready for a shareable review slide.'}
                 </p>
               </div>
 

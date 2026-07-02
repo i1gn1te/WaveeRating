@@ -9,6 +9,7 @@ import {
   getSongReviews,
 } from '../lib/instagramReviewsApi'
 import { ReviewVisibility } from '../types/instagramReview'
+import usePageTitle from '../hooks/usePageTitle'
 
 type LibraryTab = 'albums' | 'songs' | 'drafts' | 'themes'
 type SortMode = 'newest' | 'oldest' | 'highest' | 'lowest'
@@ -86,7 +87,10 @@ export default function InstagramProfile() {
   const [activeTab, setActiveTab] = useState<LibraryTab>('albums')
   const [sortMode, setSortMode] = useState<SortMode>('newest')
   const [searchTerm, setSearchTerm] = useState('')
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  usePageTitle('Library')
 
   const albumReviews = useQuery<SavedAlbumReview[]>({
     queryKey: ['instagram-profile-albums'],
@@ -110,6 +114,12 @@ export default function InstagramProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['instagram-profile-albums'] })
       queryClient.invalidateQueries({ queryKey: ['instagram-profile-album-drafts'] })
+      setActionMessage('Review deleted.')
+      setActionError(null)
+    },
+    onError: (err: any) => {
+      setActionError(err?.response?.data?.error || 'Could not delete review.')
+      setActionMessage(null)
     },
   })
   const deleteSongMutation = useMutation({
@@ -117,6 +127,12 @@ export default function InstagramProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['instagram-profile-songs'] })
       queryClient.invalidateQueries({ queryKey: ['instagram-profile-song-drafts'] })
+      setActionMessage('Review deleted.')
+      setActionError(null)
+    },
+    onError: (err: any) => {
+      setActionError(err?.response?.data?.error || 'Could not delete review.')
+      setActionMessage(null)
     },
   })
 
@@ -126,7 +142,13 @@ export default function InstagramProfile() {
   const visibleSongDrafts = useMemo(() => filterSongs(songDrafts.data || [], searchTerm, sortMode), [songDrafts.data, searchTerm, sortMode])
 
   const isLoading = albumReviews.isLoading || songReviews.isLoading || albumDrafts.isLoading || songDrafts.isLoading
-  const error =
+  const hasAnySavedItems =
+    (albumReviews.data?.length || 0) +
+      (songReviews.data?.length || 0) +
+      (albumDrafts.data?.length || 0) +
+      (songDrafts.data?.length || 0) >
+    0
+  const queryError =
     (albumReviews.error as any)?.response?.data?.error ||
     (songReviews.error as any)?.response?.data?.error ||
     (albumDrafts.error as any)?.response?.data?.error ||
@@ -149,11 +171,11 @@ export default function InstagramProfile() {
     <main className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to="/instagram/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
+          <Link to="/rate" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Rate menu
           </Link>
-          <Link to="/instagram" className="text-sm text-gray-400 transition hover:text-white">
+          <Link to="/" className="text-sm text-gray-400 transition hover:text-white">
             WaveeRating
           </Link>
           <div className="flex flex-wrap gap-4 text-sm text-gray-400">
@@ -210,17 +232,34 @@ export default function InstagramProfile() {
           ))}
         </div>
 
-        {error && (
+        {queryError && (
           <div className="mb-6 rounded-xl border border-red-800 bg-red-950/40 p-5 text-red-100">
-            {error}
+            <p>{queryError}</p>
+            <button
+              type="button"
+              onClick={() => {
+                albumReviews.refetch()
+                songReviews.refetch()
+                albumDrafts.refetch()
+                songDrafts.refetch()
+              }}
+              className="mt-4 rounded-lg border border-red-300/40 px-4 py-2 text-sm font-bold text-red-100 transition hover:border-red-100 hover:text-white"
+            >
+              Retry
+            </button>
           </div>
         )}
+        {actionMessage && <p className="mb-6 rounded-lg border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-100">{actionMessage}</p>}
+        {actionError && <p className="mb-6 rounded-lg border border-red-800 bg-red-950/50 px-3 py-2 text-sm text-red-100">{actionError}</p>}
 
         {isLoading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-pink-300" />
           </div>
         ) : (
+          !hasAnySavedItems && !searchTerm.trim() ? (
+            <LibraryEmptyState />
+          ) : (
           <div className="space-y-8">
             {activeTab === 'albums' && (
               <ReviewGrid emptyText="No saved album reviews match this view." hasItems={visibleAlbums.length > 0}>
@@ -287,6 +326,7 @@ export default function InstagramProfile() {
               </section>
             )}
           </div>
+          )
         )}
       </div>
     </main>
@@ -299,6 +339,29 @@ function ReviewGrid({ children, emptyText, hasItems }: { children: ReactNode; em
   }
 
   return <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+}
+
+function LibraryEmptyState() {
+  return (
+    <section className="rounded-xl border border-dashed border-gray-800 bg-gray-900/50 p-10 text-center">
+      <BookOpen className="mx-auto mb-4 h-10 w-10 text-gray-700" />
+      <h2 className="text-xl font-bold text-white">Your music library is empty.</h2>
+      <p className="mt-2 text-gray-400">Save your first review to build your music profile.</p>
+      <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+        <Link to="/albums" className="inline-flex items-center justify-center gap-2 rounded-lg bg-pink-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-pink-400">
+          <Disc3 className="h-4 w-4" />
+          Rate an Album / EP
+        </Link>
+        <Link to="/songs" className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-300/40 px-4 py-3 text-sm font-bold text-cyan-100 transition hover:border-cyan-100">
+          <Music2 className="h-4 w-4" />
+          Rate a Song
+        </Link>
+        <Link to="/profile/settings" className="inline-flex items-center justify-center rounded-lg border border-gray-700 px-4 py-3 text-sm font-bold text-gray-100 transition hover:border-pink-300">
+          Customize your profile
+        </Link>
+      </div>
+    </section>
+  )
 }
 
 function StatusBadge({ isDraft }: { isDraft: boolean }) {
@@ -351,13 +414,13 @@ function AlbumReviewCard({ review, onDelete, deleting }: { review: SavedAlbumRev
         <p className="mt-1 line-clamp-1 text-sm text-gray-400">{artistLine(review.albumArtists)}</p>
         <p className="mt-3 text-sm text-gray-500">{formatDate(review.createdAt)}</p>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Link to={`/instagram/profile/albums/${review.id}`} className="rounded-lg bg-gray-800 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-gray-700">
+          <Link to={`/library/albums/${review.id}`} className="rounded-lg bg-gray-800 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-gray-700">
             Open
           </Link>
-          <Link to={`/instagram/profile/albums/${review.id}/edit`} className="rounded-lg border border-gray-700 px-3 py-2 text-center text-sm font-semibold text-gray-100 transition hover:border-pink-300">
+          <Link to={`/library/albums/${review.id}/edit`} className="rounded-lg border border-gray-700 px-3 py-2 text-center text-sm font-semibold text-gray-100 transition hover:border-pink-300">
             Edit
           </Link>
-          <Link to={`/instagram/profile/albums/${review.id}`} className="rounded-lg border border-pink-700 px-3 py-2 text-center text-sm font-semibold text-pink-100 transition hover:bg-pink-950">
+          <Link to={`/library/albums/${review.id}`} className="rounded-lg border border-pink-700 px-3 py-2 text-center text-sm font-semibold text-pink-100 transition hover:bg-pink-950">
             Export
           </Link>
           <button
@@ -398,13 +461,13 @@ function SongReviewCard({ review, onDelete, deleting }: { review: SavedSongRevie
         <p className="mt-1 line-clamp-1 text-sm text-gray-500">{review.albumTitle || 'Unknown album'}</p>
         <p className="mt-3 text-sm text-gray-500">{formatDate(review.createdAt)}</p>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Link to={`/instagram/profile/songs/${review.id}`} className="rounded-lg bg-gray-800 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-gray-700">
+          <Link to={`/library/songs/${review.id}`} className="rounded-lg bg-gray-800 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-gray-700">
             Open
           </Link>
-          <Link to={`/instagram/profile/songs/${review.id}/edit`} className="rounded-lg border border-gray-700 px-3 py-2 text-center text-sm font-semibold text-gray-100 transition hover:border-cyan-300">
+          <Link to={`/library/songs/${review.id}/edit`} className="rounded-lg border border-gray-700 px-3 py-2 text-center text-sm font-semibold text-gray-100 transition hover:border-cyan-300">
             Edit
           </Link>
-          <Link to={`/instagram/profile/songs/${review.id}`} className="rounded-lg border border-cyan-700 px-3 py-2 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-950">
+          <Link to={`/library/songs/${review.id}`} className="rounded-lg border border-cyan-700 px-3 py-2 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-950">
             Export
           </Link>
           <button
