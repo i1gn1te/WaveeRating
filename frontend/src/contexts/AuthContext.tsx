@@ -6,9 +6,11 @@ interface User {
   id: string
   spotifyId: string
   email?: string
+  username?: string | null
   displayName?: string
   avatarUrl?: string
   bio?: string
+  isProfilePublic?: boolean
   favoriteGenres: string[]
 }
 

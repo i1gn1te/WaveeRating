@@ -11,10 +11,14 @@ model User {
   id            String    @id @default(cuid())
   spotifyId     String    @unique
   email         String?   @unique
+  username      String?   @unique
   displayName   String?
   avatarUrl     String?
   country       String?
   bio           String?
+  profileTheme  Json?
+  isProfilePublic Boolean @default(true)
+  passwordHash  String?
   
   // Music preferences
   favoriteGenres String[]
@@ -23,9 +27,103 @@ model User {
   reviews       Review[]
   playlists     Playlist[]
   likedTracks   LikedTrack[]
+  albumReviews  AlbumReview[]
+  songReviews   SongReview[]
+  following     Follow[] @relation("UserFollows")
+  followers     Follow[] @relation("UserFollowers")
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  follower    User     @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model AlbumReview {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  spotifyAlbumId       String
+  albumTitle           String
+  albumArtists         Json
+  albumImageUrl        String?
+  releaseDate          String?
+  releaseYear          Int?
+  albumType            String?
+
+  finalScore           Float
+  trackAverage         Float?
+  albumCategoryAverage Float?
+
+  bestTrackTitle       String?
+  weakestTrackTitle    String?
+
+  reviewTitle          String?
+  reviewBody           String?
+  finalRecommendation  String?
+
+  theme                Json?
+  ratingData           Json
+  slideData            Json?
+
+  isDraft              Boolean  @default(false)
+  isPublic             Boolean  @default(true)
+  visibility           String   @default("public")
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
+  @@index([spotifyAlbumId])
+  @@index([createdAt])
+  @@index([visibility])
+}
+
+model SongReview {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  spotifyTrackId      String
+  trackTitle          String
+  trackArtists        Json
+  albumId             String?
+  albumTitle          String?
+  imageUrl            String?
+  durationMs          Int?
+
+  finalScore          Float
+
+  reviewTitle         String?
+  reviewBody          String?
+  finalRecommendation String?
+
+  theme               Json?
+  ratingData          Json
+  slideData           Json?
+
+  isDraft             Boolean  @default(false)
+  isPublic            Boolean  @default(true)
+  visibility          String   @default("public")
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([spotifyTrackId])
+  @@index([createdAt])
+  @@index([visibility])
 }
 
 model Review {

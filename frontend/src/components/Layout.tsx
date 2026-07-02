@@ -3,14 +3,19 @@ import { useAuth } from '../contexts/AuthContext'
 import { Music, Search, Star, ListMusic, User, LogOut, Menu, X, Users } from 'lucide-react'
 import { useState } from 'react'
 
-export default function Layout() {
+interface LayoutProps {
+  basePath?: string
+}
+
+export default function Layout({ basePath = '' }: LayoutProps) {
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const pathTo = (path = '') => `${basePath}${path}` || '/'
 
   const handleLogout = async () => {
     await logout()
-    navigate('/')
+    navigate(pathTo(''))
   }
 
   return (
@@ -20,7 +25,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2">
+            <Link to={pathTo('')} className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
                 <Music className="w-5 h-5 text-white" />
               </div>
@@ -30,23 +35,23 @@ export default function Layout() {
             {/* Nawigacja desktop */}
             {isAuthenticated && (
               <div className="hidden md:flex items-center gap-6">
-                <Link to="/dashboard" className="text-gray-300 hover:text-white transition flex items-center gap-2">
+                <Link to={pathTo('/dashboard')} className="text-gray-300 hover:text-white transition flex items-center gap-2">
                   <Music className="w-4 h-4" />
                   Dashboard
                 </Link>
-                <Link to="/search" className="text-gray-300 hover:text-white transition flex items-center gap-2">
+                <Link to={pathTo('/search')} className="text-gray-300 hover:text-white transition flex items-center gap-2">
                   <Search className="w-4 h-4" />
                   Szukaj
                 </Link>
-                <Link to="/reviews" className="text-gray-300 hover:text-white transition flex items-center gap-2">
+                <Link to={pathTo('/reviews')} className="text-gray-300 hover:text-white transition flex items-center gap-2">
                   <Star className="w-4 h-4" />
                   Recenzje
                 </Link>
-                <Link to="/generator" className="text-gray-300 hover:text-white transition flex items-center gap-2">
+                <Link to={pathTo('/generator')} className="text-gray-300 hover:text-white transition flex items-center gap-2">
                   <ListMusic className="w-4 h-4" />
                   Generator
                 </Link>
-                <Link to="/community" className="text-gray-300 hover:text-white transition flex items-center gap-2">
+                <Link to={pathTo('/community')} className="text-gray-300 hover:text-white transition flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   Społeczność
                 </Link>
@@ -57,7 +62,7 @@ export default function Layout() {
             <div className="flex items-center gap-4">
               {isAuthenticated ? (
                 <>
-                  <Link to="/profile" className="hidden md:flex items-center gap-2 text-gray-300 hover:text-white">
+                  <Link to={pathTo('/profile')} className="hidden md:flex items-center gap-2 text-gray-300 hover:text-white">
                     {user?.avatarUrl ? (
                       <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full" />
                     ) : (
@@ -82,7 +87,7 @@ export default function Layout() {
                 </>
               ) : (
                 <Link
-                  to="/login"
+                  to={pathTo('/login')}
                   className="px-4 py-2 bg-spotify-green text-white rounded-full text-sm font-medium hover:bg-green-500 transition"
                 >
                   Zaloguj przez Spotify
@@ -96,22 +101,22 @@ export default function Layout() {
         {mobileMenuOpen && isAuthenticated && (
           <div className="md:hidden bg-gray-900 border-t border-gray-800">
             <div className="px-4 py-4 space-y-3">
-              <Link to="/dashboard" className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
+              <Link to={pathTo('/dashboard')} className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
                 Dashboard
               </Link>
-              <Link to="/search" className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
+              <Link to={pathTo('/search')} className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
                 Szukaj
               </Link>
-              <Link to="/reviews" className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
+              <Link to={pathTo('/reviews')} className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
                 Recenzje
               </Link>
-              <Link to="/generator" className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
+              <Link to={pathTo('/generator')} className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
                 Generator
               </Link>
-              <Link to="/community" className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
+              <Link to={pathTo('/community')} className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
                 Społeczność
               </Link>
-              <Link to="/profile" className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
+              <Link to={pathTo('/profile')} className="block text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
                 Profil
               </Link>
               <button onClick={handleLogout} className="text-red-400 hover:text-red-300">

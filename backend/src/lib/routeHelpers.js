@@ -8,6 +8,12 @@ exports.isDemoUser = isDemoUser;
 exports.shuffleArray = shuffleArray;
 const axios_1 = __importDefault(require("axios"));
 function handleSpotifyRouteError(res, error, defaultMessage) {
+    if (error?.statusCode) {
+        return res.status(error.statusCode).json({
+            error: error.message || defaultMessage,
+            code: error.code || 'SPOTIFY_ERROR',
+        });
+    }
     if (axios_1.default.isAxiosError(error)) {
         const status = error.response?.status;
         const spotifyError = error.response?.data?.error;

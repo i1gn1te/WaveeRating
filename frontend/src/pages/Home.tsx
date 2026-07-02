@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Loader2, Music, Star, Sparkles, ListMusic, TrendingUp } from 'lucide-react'
 import { queryClient } from '../main'
-
-const API_URL = '/api'
+import { API_BASE_URL } from '../lib/api'
 
 export default function Home() {
   const { isAuthenticated, refetchUser } = useAuth()
@@ -16,7 +15,7 @@ export default function Home() {
     try {
       queryClient.clear()
 
-      const response = await fetch(`${API_URL}/auth/demo-login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/demo-login`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -57,7 +56,7 @@ export default function Home() {
           {!isAuthenticated && (
             <div className="flex flex-col items-center gap-3">
               <Link
-                to="/login"
+                to="/classic/login"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-spotify-green text-white rounded-full text-lg font-semibold hover:bg-green-500 transition-all hover:scale-105"
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -79,7 +78,7 @@ export default function Home() {
           )}
           {isAuthenticated && (
             <Link
-              to="/dashboard"
+              to="/classic/dashboard"
               className="inline-flex items-center gap-2 px-8 py-4 bg-primary-500 text-white rounded-full text-lg font-semibold hover:bg-primary-600 transition-all hover:scale-105"
             >
               Przejdź do Dashboard

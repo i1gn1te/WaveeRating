@@ -13,7 +13,19 @@ exports.getUserProfile = getUserProfile;
 exports.getTopTracks = getTopTracks;
 exports.getTopArtists = getTopArtists;
 exports.searchTracks = searchTracks;
+exports.searchAlbums = searchAlbums;
+exports.searchPublicAlbums = searchPublicAlbums;
+exports.searchPublicTracks = searchPublicTracks;
+exports.searchPublicArtists = searchPublicArtists;
+exports.getPublicTrack = getPublicTrack;
 exports.getTrack = getTrack;
+exports.getAlbum = getAlbum;
+exports.getAlbumTracks = getAlbumTracks;
+exports.getPublicAlbum = getPublicAlbum;
+exports.getPublicAlbumTracks = getPublicAlbumTracks;
+exports.getPublicArtist = getPublicArtist;
+exports.getPublicArtistAlbums = getPublicArtistAlbums;
+exports.checkSpotifyApiHealth = checkSpotifyApiHealth;
 exports.getAudioFeatures = getAudioFeatures;
 exports.getRelatedArtists = getRelatedArtists;
 exports.getArtistTopTracks = getArtistTopTracks;
@@ -23,6 +35,7 @@ exports.createPlaylist = createPlaylist;
 exports.addTracksToPlaylist = addTracksToPlaylist;
 exports.shuffle = shuffle;
 const axios_1 = __importDefault(require("axios"));
+const config_js_1 = require("./config.js");
 // Stale
 const API = 'https://api.spotify.com/v1';
 const ACCOUNTS = 'https://accounts.spotify.com';
@@ -60,8 +73,8 @@ function authHeader(token) {
 function basicAuth() {
     const id = process.env.SPOTIFY_CLIENT_ID;
     const secret = process.env.SPOTIFY_CLIENT_SECRET;
-    if (!id || !secret)
-        throw new Error('SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET not set');
+    if (!(0, config_js_1.hasUsableEnv)('SPOTIFY_CLIENT_ID') || !(0, config_js_1.hasUsableEnv)('SPOTIFY_CLIENT_SECRET'))
+        throw (0, config_js_1.createConfigError)(config_js_1.SPOTIFY_NOT_CONFIGURED_MESSAGE, 'SPOTIFY_NOT_CONFIGURED', 503);
     return `Basic ${Buffer.from(`${id}:${secret}`).toString('base64')}`;
 }
 function getRedirectUri() {
@@ -160,11 +173,229 @@ async function searchTracks(token, query, limit = 20) {
         throw err;
     }
 }
+async function searchAlbums(token, query, limit = 20) {
+    const { data } = await axios_1.default.get(`${API}/search`, {
+        headers: authHeader(token),
+        params: { q: query, type: 'album', limit },
+    });
+    return (data.albums?.items ?? []).slice(0, limit);
+}
+let clientCredentialsCache = {
+    token: null,
+    expiresAt: 0,
+};
+async function getClientCredentialsToken() {
+    const now = Date.now();
+    if (clientCredentialsCache.token && clientCredentialsCache.expiresAt > now + 30000) {
+        return clientCredentialsCache.token;
+    }
+    const { data } = await axios_1.default.post(`${ACCOUNTS}/api/token`, new URLSearchParams({
+        grant_type: 'client_credentials',
+    }).toString(), {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Authorization: basicAuth(),
+        },
+    });
+    clientCredentialsCache = {
+        token: data.access_token,
+        expiresAt: now + Math.max(0, (data.expires_in || 3600) - 60) * 1000,
+    };
+    return clientCredentialsCache.token;
+}
+async function publicGet(path, params = {}) {
+    const token = await getClientCredentialsToken();
+    const { data } = await axios_1.default.get(`${API}${path}`, {
+        headers: authHeader(token),
+        params,
+    });
+    return data;
+}
+function simplifyArtist(artist) {
+    return {
+        id: artist.id,
+        name: artist.name,
+        spotifyUrl: artist.external_urls?.spotify || null,
+    };
+}
+function simplifyAlbum(album) {
+    const releaseDate = album.release_date || '';
+    return {
+        id: album.id,
+        name: album.name,
+        title: album.name,
+        artists: (album.artists || []).map(simplifyArtist),
+        releaseYear: releaseDate ? releaseDate.slice(0, 4) : null,
+        releaseDate,
+        imageUrl: album.images?.[0]?.url || null,
+        totalTracks: album.total_tracks || 0,
+        albumType: album.album_type || null,
+        genres: album.genres || [],
+        spotifyUrl: album.external_urls?.spotify || null,
+    };
+}
+function simplifyPublicArtist(artist) {
+    return {
+        id: artist.id,
+        name: artist.name,
+        imageUrl: artist.images?.[0]?.url || null,
+        genres: artist.genres || [],
+        followersTotal: artist.followers?.total ?? null,
+        popularity: artist.popularity ?? null,
+        spotifyUrl: artist.external_urls?.spotify || null,
+    };
+}
+function simplifyAlbumTrack(track) {
+    return {
+        id: track.id,
+        trackNumber: track.track_number,
+        name: track.name,
+        title: track.name,
+        durationMs: track.duration_ms,
+        artists: (track.artists || []).map(simplifyArtist),
+        spotifyUrl: track.external_urls?.spotify || null,
+    };
+}
+function simplifyPublicTrack(track) {
+    const album = track.album || {};
+    const releaseDate = album.release_date || '';
+    return {
+        id: track.id,
+        name: track.name,
+        title: track.name,
+        artists: (track.artists || []).map(simplifyArtist),
+        albumId: album.id || null,
+        albumName: album.name || null,
+        imageUrl: album.images?.[0]?.url || null,
+        durationMs: track.duration_ms,
+        releaseDate,
+        releaseYear: releaseDate ? releaseDate.slice(0, 4) : null,
+        trackNumber: track.track_number,
+        discNumber: track.disc_number,
+        spotifyUrl: track.external_urls?.spotify || null,
+    };
+}
+async function searchPublicAlbums(query, limit = 4) {
+    const data = await publicGet('/search', { q: query, type: 'album', limit });
+    return (data.albums?.items || []).map(simplifyAlbum).slice(0, limit);
+}
+async function searchPublicTracks(query, limit = 4) {
+    const data = await publicGet('/search', { q: query, type: 'track', limit });
+    return (data.tracks?.items || []).map(simplifyPublicTrack).slice(0, limit);
+}
+async function searchPublicArtists(query, limit = 4) {
+    const data = await publicGet('/search', { q: query, type: 'artist', limit });
+    return (data.artists?.items || []).map(simplifyPublicArtist).slice(0, limit);
+}
+async function getPublicAlbum(albumId) {
+    const album = await publicGet(`/albums/${albumId}`);
+    return simplifyAlbum(album);
+}
+async function getPublicAlbumTracks(albumId, maxTracks = 200) {
+    const tracks = [];
+    let offset = 0;
+    const pageSize = 50;
+    while (tracks.length < maxTracks) {
+        const data = await publicGet(`/albums/${albumId}/tracks`, { limit: pageSize, offset });
+        const items = data.items || [];
+        tracks.push(...items.map(simplifyAlbumTrack));
+        if (!data.next || items.length === 0)
+            break;
+        offset += items.length;
+    }
+    return tracks.slice(0, maxTracks);
+}
+async function getPublicTrack(trackId) {
+    const track = await publicGet(`/tracks/${trackId}`);
+    return simplifyPublicTrack(track);
+}
+async function getPublicArtist(artistId) {
+    const artist = await publicGet(`/artists/${artistId}`);
+    return simplifyPublicArtist(artist);
+}
+async function getPublicArtistAlbums(artistId, limit = 20) {
+    const finalLimit = Math.max(1, Math.min(50, Number.parseInt(String(limit), 10) || 20));
+    const albums = [];
+    const seen = new Set();
+    let offset = 0;
+    const pageSize = Math.min(10, finalLimit);
+    while (albums.length < finalLimit && offset < 200) {
+        const data = await publicGet(`/artists/${artistId}/albums`, {
+            include_groups: 'album,single',
+            limit: pageSize,
+            offset,
+        });
+        const items = data.items || [];
+        for (const album of items) {
+            const releaseDate = album.release_date || '';
+            const releaseYear = releaseDate ? releaseDate.slice(0, 4) : '';
+            const dedupeKey = `${String(album.name || '').toLowerCase().trim()}-${releaseYear}`;
+            if (!seen.has(dedupeKey)) {
+                seen.add(dedupeKey);
+                albums.push(simplifyAlbum(album));
+            }
+            if (albums.length >= finalLimit) {
+                break;
+            }
+        }
+        if (!data.next || items.length === 0) {
+            break;
+        }
+        offset += items.length;
+    }
+    return albums.slice(0, finalLimit);
+}
+async function checkSpotifyApiHealth() {
+    const configured = (0, config_js_1.hasUsableEnv)('SPOTIFY_CLIENT_ID') && (0, config_js_1.hasUsableEnv)('SPOTIFY_CLIENT_SECRET');
+    if (!configured) {
+        return {
+            ok: false,
+            configured: false,
+            token: false,
+            error: config_js_1.SPOTIFY_NOT_CONFIGURED_MESSAGE,
+        };
+    }
+    try {
+        await getClientCredentialsToken();
+        return { ok: true, configured: true, token: true };
+    }
+    catch (error) {
+        return {
+            ok: false,
+            configured: true,
+            token: false,
+            error: error.response?.data?.error_description || error.response?.data?.error || error.message || 'Spotify token request failed',
+        };
+    }
+}
 async function getTrack(token, trackId) {
     const { data } = await axios_1.default.get(`${API}/tracks/${trackId}`, {
         headers: authHeader(token),
     });
     return data;
+}
+async function getAlbum(token, albumId) {
+    const { data } = await axios_1.default.get(`${API}/albums/${albumId}`, {
+        headers: authHeader(token),
+    });
+    return data;
+}
+async function getAlbumTracks(token, albumId, maxTracks = 200) {
+    const tracks = [];
+    let offset = 0;
+    const pageSize = 50;
+    while (tracks.length < maxTracks) {
+        const { data } = await axios_1.default.get(`${API}/albums/${albumId}/tracks`, {
+            headers: authHeader(token),
+            params: { limit: pageSize, offset },
+        });
+        const items = data.items ?? [];
+        tracks.push(...items);
+        if (!data.next || items.length === 0)
+            break;
+        offset += items.length;
+    }
+    return tracks.slice(0, maxTracks);
 }
 /**
  * Pobiera cechy audio utworu.

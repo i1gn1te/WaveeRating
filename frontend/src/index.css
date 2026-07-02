@@ -21,3 +21,38 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-600;
 }
+
+.rating-slider {
+  height: 12px;
+  appearance: none;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--score-color) 0%,
+    var(--score-color) var(--score-fill),
+    #1f2937 var(--score-fill),
+    #1f2937 100%
+  );
+  outline: none;
+}
+
+.rating-slider::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+  appearance: none;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  background: var(--score-color);
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.08), 0 0 18px color-mix(in srgb, var(--score-color) 55%, transparent);
+  cursor: pointer;
+}
+
+.rating-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  background: var(--score-color);
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.08), 0 0 18px color-mix(in srgb, var(--score-color) 55%, transparent);
+  cursor: pointer;
+}

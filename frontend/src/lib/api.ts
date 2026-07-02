@@ -1,7 +1,19 @@
 ﻿import axios from 'axios'
 
+function getApiBaseURL() {
+  const configuredUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '')
+
+  if (!configuredUrl) {
+    return '/api'
+  }
+
+  return configuredUrl.endsWith('/api') ? configuredUrl : `${configuredUrl}/api`
+}
+
+export const API_BASE_URL = getApiBaseURL()
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   withCredentials: true,
 })
 
@@ -16,6 +28,7 @@ api.interceptors.response.use(
 
     const shouldSkipRefresh =
       requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/me') ||
       requestUrl.includes('/auth/demo-login') ||
       requestUrl.includes('/auth/refresh') ||
       requestUrl.includes('/auth/logout')
@@ -44,6 +57,8 @@ api.interceptors.response.use(
 // Logowanie
 export const getLoginUrl = () => api.get<{ url: string | null; demoMode?: boolean; message?: string }>('/auth/login')
 export const getCurrentUser = () => api.get('/auth/me')
+export const localLogin = (data: { email: string; password: string }) => api.post('/auth/local-login', data)
+export const register = (data: { email: string; password: string; displayName?: string }) => api.post('/auth/register', data)
 export const logout = () => api.post('/auth/logout')
 
 // Uzytkownik
@@ -62,6 +77,16 @@ export const getAudioFeatures = (trackId: string) => api.get(`/spotify/audio-fea
 export const getTopTracks = (timeRange = 'medium_term') => api.get('/spotify/top/tracks', { params: { timeRange } })
 export const getTopArtists = (timeRange = 'medium_term') => api.get('/spotify/top/artists', { params: { timeRange } })
 export const getAvailableGenres = () => api.get('/spotify/genres')
+export const searchAlbums = (query: string) => api.get('/spotify/search-albums', { params: { q: query, limit: 4 } })
+export const getAlbum = (albumId: string) => api.get(`/spotify/albums/${albumId}`)
+export const getAlbumTracks = (albumId: string) => api.get(`/spotify/albums/${albumId}/tracks`)
+export const searchArtists = (query: string) => api.get('/spotify/search-artists', { params: { q: query, limit: 4 } })
+export const getArtist = (artistId: string) => api.get(`/spotify/artists/${artistId}`)
+export const getArtistAlbums = (artistId: string) => api.get(`/spotify/artists/${artistId}/albums`, { params: { limit: 20 } })
+export const searchPublicTracks = (query: string) => api.get('/spotify/search-tracks', { params: { q: query, limit: 4 } })
+export const getPublicTrack = (trackId: string) => api.get(`/spotify/tracks/${trackId}`)
+export const getSpotifyImageProxyUrl = (url?: string | null) =>
+  url ? `${API_BASE_URL}/spotify/image-proxy?url=${encodeURIComponent(url)}` : null
 
 // Recenzje
 export const createReview = (data: { trackId: string; rating: number; content?: string }) => 
