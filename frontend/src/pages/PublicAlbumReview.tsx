@@ -167,7 +167,7 @@ export default function PublicAlbumReview() {
         <div className="mx-auto max-w-3xl rounded-xl border border-red-800 bg-red-950/40 p-8">
           <Link to="/instagram" className="mb-6 inline-flex items-center gap-2 text-sm text-red-100/80 hover:text-white">
             <ArrowLeft className="h-4 w-4" />
-            Instagram Review Generator
+            WaveeRating
           </Link>
           <h1 className="text-2xl font-bold text-red-100">Album review cannot load.</h1>
           <p className="mt-3 text-red-100/80">{(reviewQuery.error as any)?.response?.data?.error || 'Review not found.'}</p>
@@ -182,7 +182,7 @@ export default function PublicAlbumReview() {
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link to="/instagram" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
-            Instagram Review Generator
+            WaveeRating
           </Link>
           {review.user?.username && (
             <Link to={`/u/${review.user.username}`} className="text-sm text-gray-400 transition hover:text-white">

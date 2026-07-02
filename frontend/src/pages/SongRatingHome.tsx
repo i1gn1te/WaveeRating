@@ -40,7 +40,7 @@ export default function SongRatingHome() {
   }
 
   const handleTrackClick = (track: SongDraftTrackData) => {
-    console.log('[Instagram Review Generator] selected song ID:', track.id)
+    console.log('[WaveeRating] selected song ID:', track.id)
     navigate(`/instagram/songs/${track.id}`)
   }
 

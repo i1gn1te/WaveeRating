@@ -54,7 +54,7 @@ app.use('/api/recommendations', recommendations_js_1.default);
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
-        message: 'waveeProjectBW API is running',
+        message: 'WaveeRating API is running',
         env: (0, config_js_1.getEnvDiagnostics)(),
     });
 });
@@ -65,7 +65,7 @@ app.use((err, req, res, next) => {
 });
 app.listen(PORT, '0.0.0.0', () => {
     const diagnostics = (0, config_js_1.getEnvDiagnostics)();
-    console.log(`waveeProjectBW server running on http://localhost:${PORT}`);
+    console.log(`WaveeRating server running on http://localhost:${PORT}`);
     if (diagnostics.missing.length > 0) {
         console.warn('[Config] Missing or placeholder env:', diagnostics.missing.join(', '));
     }

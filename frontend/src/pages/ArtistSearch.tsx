@@ -50,7 +50,7 @@ export default function ArtistSearch() {
         <nav className="mb-8 flex items-center justify-between">
           <Link to="/instagram" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
-            Instagram Review Generator
+            WaveeRating
           </Link>
           <Link to="/instagram/albums" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <Disc3 className="h-4 w-4" />

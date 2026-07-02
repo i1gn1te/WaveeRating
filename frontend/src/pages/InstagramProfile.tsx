@@ -154,7 +154,7 @@ export default function InstagramProfile() {
             Rate menu
           </Link>
           <Link to="/instagram" className="text-sm text-gray-400 transition hover:text-white">
-            Instagram Review Generator
+            WaveeRating
           </Link>
           <div className="flex flex-wrap gap-4 text-sm text-gray-400">
             <Link to="/feed" className="transition hover:text-white">Feed</Link>
@@ -165,7 +165,7 @@ export default function InstagramProfile() {
         <section className="mb-8">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-pink-300">Profile library</p>
           <h1 className="mt-2 text-3xl font-black tracking-normal text-white sm:text-4xl">Your Music Review Library</h1>
-          <p className="mt-3 max-w-2xl text-gray-400">Saved album, EP, song, and draft reviews from Instagram Review Generator.</p>
+          <p className="mt-3 max-w-2xl text-gray-400">Saved album, EP, song, and draft reviews from WaveeRating.</p>
         </section>
 
         <section className="mb-6 grid gap-3 lg:grid-cols-[1fr_auto]">

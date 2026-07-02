@@ -567,7 +567,7 @@ export default function AlbumReviewBuilder() {
               Library
             </Link>
             <Link to="/" className="text-sm text-gray-400 transition hover:text-white">
-              Tryby
+              Home
             </Link>
           </div>
         </nav>

@@ -137,7 +137,7 @@ model Review {
   albumArt    String?
   
   // Review content
-  rating      Float    // 0.5 to 5.0 stars (like Letterboxd)
+  rating      Float    // Legacy 0.5 to 5.0 star rating
   content     String?  // Text review (optional)
   
   // Audio features at time of review

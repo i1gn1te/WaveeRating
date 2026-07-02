@@ -15,9 +15,9 @@ const router = (0, express_1.Router)();
 const DEMO_USER = {
     id: 'demo_user',
     spotifyId: 'demo_user',
-    email: 'demo@waveeProjectBW.app',
+    email: 'demo@waveerating.app',
     displayName: 'Demo User',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=waveeProjectBW',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=WaveeRating',
     country: 'PL',
     favoriteGenres: ['pop', 'rock', 'electronic'],
     _count: { reviews: 0, playlists: 0 },

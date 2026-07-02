@@ -1,4 +1,4 @@
-<!doctype html><html lang="pl"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>07 - Uruchomienie</title><link rel="stylesheet" href="../style.css"/></head><body><div class="page"><header class="header"><h1>07. Uruchomienie i analiza techniczna</h1><p class="muted">Sekcja zawiera konfiguracje startowa oraz opis mechanizmow stabilnosci dzialania.</p><div class="breadcrumb"><a href="../WAVEE_PROJECT_BW_DOKUMENTACJA_TECHNICZNA.html">Powrot do strony glownej</a></div></header><section class="card"><h2>Uruchomienie backend</h2><pre><code>cd backend
+<!doctype html><html lang="pl"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>07 - Uruchomienie</title><link rel="stylesheet" href="../style.css"/></head><body><div class="page"><header class="header"><h1>07. Uruchomienie i analiza techniczna</h1><p class="muted">Sekcja zawiera konfiguracje startowa oraz opis mechanizmow stabilnosci dzialania.</p><div class="breadcrumb"><a href="../WAVEE_RATING_DOKUMENTACJA_TECHNICZNA.html">Powrot do strony glownej</a></div></header><section class="card"><h2>Uruchomienie backend</h2><pre><code>cd backend
 npm install
 npm run db:generate
 npm run db:push
@@ -8,9 +8,9 @@ npm install
 npm run dev
 </code></pre></section><section class="card"><h2>Konfiguracja backend .env</h2><pre><code>PORT=3001
 CLIENT_URL=http://localhost:5173
-DATABASE_URL=postgresql://USER:PASS@localhost:5432/waveeProjectBW
+DATABASE_URL=postgresql://USER:PASS@localhost:5432/waveeRating
 JWT_SECRET=sekret
 SPOTIFY_CLIENT_ID=...
 SPOTIFY_CLIENT_SECRET=...
 SPOTIFY_REDIRECT_URI=http://localhost:3001/api/auth/callback
-</code></pre></section><section class="card"><h2>Mechanizmy dzialania</h2><ul><li>Walidacja danych wejsciowych przez Zod.</li><li>Autoryzacja przez JWT i middleware auth.</li><li>Obsluga sesji z odswiezaniem tokenu.</li><li>Tryb demo oparty o mockData przy braku tokenow Spotify.</li></ul></section><footer class="footer"><p>Podpis autorow dokumentacji: Aleksander Baran, Franciszek Wawrzeñ</p></footer></div></body></html>
+</code></pre></section><section class="card"><h2>Mechanizmy dzialania</h2><ul><li>Walidacja danych wejsciowych przez Zod.</li><li>Autoryzacja przez JWT i middleware auth.</li><li>Obsluga sesji z odswiezaniem tokenu.</li><li>Dane demo oparte o mockData przy braku tokenow Spotify.</li></ul></section><footer class="footer"><p>Podpis autorow dokumentacji: Aleksander Baran, Franciszek Wawrzeñ</p></footer></div></body></html>

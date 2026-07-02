@@ -116,7 +116,7 @@ export default function Login() {
           </div>
         </div>
 
-        <h1 className="mb-2 text-3xl font-bold text-white">Log in to WaveeBW</h1>
+        <h1 className="mb-2 text-3xl font-bold text-white">Log in to WaveeRating</h1>
         <p className="mb-6 text-gray-400">Use Spotify, local account, or demo mode.</p>
 
         {error && (

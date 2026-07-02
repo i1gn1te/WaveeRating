@@ -29,7 +29,7 @@ export default function Layout({ basePath = '' }: LayoutProps) {
               <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
                 <Music className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">waveeProjectBW</span>
+              <span className="text-xl font-bold text-white">WaveeRating</span>
             </Link>
 
             {/* Nawigacja desktop */}
@@ -135,7 +135,7 @@ export default function Layout({ basePath = '' }: LayoutProps) {
       {/* Stopka */}
       <footer className="border-t border-gray-800 py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
-          <p>waveeProjectBW - Twój personalny przewodnik muzyczny 🎵</p>
+          <p>WaveeRating - Rate music. Build beautiful reviews. Share them anywhere.</p>
           <p className="mt-2">Powered by Spotify Web API</p>
         </div>
       </footer>

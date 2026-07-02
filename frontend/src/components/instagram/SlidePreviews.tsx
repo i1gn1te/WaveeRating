@@ -138,7 +138,7 @@ function SlideShell({
   style,
   children,
   refValue,
-  eyebrow = 'WaveeBW Review',
+  eyebrow = 'WaveeRating Review',
   templateId = 'classic-cover',
   textSettings,
 }: SlideProps & { children: ReactNode; refValue: ForwardedRef<HTMLDivElement>; eyebrow?: string }) {

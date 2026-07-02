@@ -1,7 +1,7 @@
-# waveeProjectBW - dokumentacja techniczna
+# WaveeRating - dokumentacja techniczna
 
 ## 1. Zakres dokumentu
-Niniejszy dokument opisuje dzialanie aplikacji waveeProjectBW na poziomie technicznym.
+Niniejszy dokument opisuje dzialanie aplikacji WaveeRating na poziomie technicznym.
 Opis obejmuje:
 - architekture systemu,
 - backend i route API,
@@ -57,7 +57,7 @@ Zakres pracy middleware:
 - prisma.js: singleton klienta Prisma,
 - spotify.js: obsluga Spotify OAuth oraz endpointow danych muzycznych,
 - routeHelpers.js: ujednolicenie obslugi bledow i helpery dla tras,
-- mockData.js: dane demonstracyjne dla trybu demo.
+- mockData.js: dane demonstracyjne dla danych demo.
 
 ## 4. API
 
@@ -169,7 +169,7 @@ Przyklad backend .env:
 ```env
 PORT=3001
 CLIENT_URL=http://localhost:5173
-DATABASE_URL=postgresql://USER:PASS@localhost:5432/waveeProjectBW
+DATABASE_URL=postgresql://USER:PASS@localhost:5432/waveeRating
 JWT_SECRET=sekret
 SPOTIFY_CLIENT_ID=...
 SPOTIFY_CLIENT_SECRET=...
@@ -180,7 +180,7 @@ SPOTIFY_REDIRECT_URI=http://localhost:3001/api/auth/callback
 Aplikacja realizuje spojny przeplyw danych klient-serwer.
 Warstwa backend zapewnia autoryzacje, walidacje i dostep do danych.
 Warstwa frontend zapewnia interfejs oraz obsluge sesji i cache.
-Tryb demo pozwala uruchomic i testowac pelny przeplyw funkcjonalny bez aktywnej integracji Spotify.
+Demo pozwala uruchomic i testowac pelny przeplyw funkcjonalny bez aktywnej integracji Spotify.
 
 ## 9. Podpis autorow dokumentacji
 Aleksander Baran

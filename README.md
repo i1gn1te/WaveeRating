@@ -1,8 +1,8 @@
-# 🌊 waveeProjectBW
+# WaveeRating
 
-**Your Music Review & Playlist Platform**
+**Rate music. Build beautiful reviews. Share them anywhere.**
 
-System rekomendacji i recenzji muzyki z wykorzystaniem Spotify API.
+WaveeRating is a music rating and review app for albums, EPs, songs, social profiles, friend activity, saved reviews, and Instagram-ready PNG/ZIP exports.
 
 ## ✨ Funkcjonalności
 
@@ -23,7 +23,7 @@ System rekomendacji i recenzji muzyki z wykorzystaniem Spotify API.
 Backend uses PostgreSQL through Prisma. For local register/login, set a real database URL in `backend/.env`:
 
 ```env
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/waveeProjectBW?schema=public"
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/waveeRating?schema=public"
 JWT_SECRET="replace_with_random_32_byte_hex_secret"
 ```
 

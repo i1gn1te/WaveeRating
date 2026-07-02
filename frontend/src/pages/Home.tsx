@@ -50,8 +50,8 @@ export default function Home() {
             Odkryj swoją <span className="text-primary-400">muzyczną tożsamość</span>
           </h1>
           <p className="text-xl text-gray-400 mb-8">
-            waveeProjectBW to Twój personalny przewodnik po świecie muzyki. 
-            Recenzuj utwory, odkrywaj nowe brzmienia i twórz playlisty dopasowane do Twojego gustu.
+            WaveeRating helps you rate music, build beautiful reviews, and share them anywhere.
+            Review albums, EPs, and songs while building your music profile.
           </p>
           {!isAuthenticated && (
             <div className="flex flex-col items-center gap-3">
@@ -95,7 +95,7 @@ export default function Home() {
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">Recenzuj muzykę</h3>
           <p className="text-gray-400 text-sm">
-            Oceniaj utwory i dziel się swoimi opiniami jak na Letterboxd - ale dla muzyki!
+            Oceniaj albumy, EP i piosenki, zapisuj recenzje i pokazuj swoje muzyczne wybory.
           </p>
         </div>
 

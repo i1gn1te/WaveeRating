@@ -49,7 +49,7 @@ export default function AlbumSearch() {
   }
 
   const handleAlbumClick = (album: AlbumResult) => {
-    console.log('[Instagram Review Generator] selected album ID:', album.id)
+    console.log('[WaveeRating] selected album ID:', album.id)
     navigate(`/instagram/albums/${album.id}`)
   }
 
@@ -59,7 +59,7 @@ export default function AlbumSearch() {
         <nav className="mb-8 flex items-center justify-between">
           <Link to="/instagram" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
-            Instagram Review Generator
+            WaveeRating
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/instagram/artists" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
@@ -67,7 +67,7 @@ export default function AlbumSearch() {
               Search by artist
             </Link>
             <Link to="/" className="text-sm text-gray-400 transition hover:text-white">
-              Tryby
+              Home
             </Link>
           </div>
         </nav>
@@ -79,7 +79,7 @@ export default function AlbumSearch() {
           </div>
           <h1 className="text-3xl font-bold tracking-normal text-white sm:text-4xl">Szukaj albumow Spotify</h1>
           <p className="mt-3 max-w-2xl text-gray-400">
-            Wybierz album jako punkt startowy dla generatora slajdow recenzenckich.
+            Wybierz album jako punkt startowy recenzji i opcjonalnego eksportu slajdow.
           </p>
           <Link to="/instagram/artists" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 transition hover:text-cyan-100">
             <UserRound className="h-4 w-4" />

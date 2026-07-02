@@ -8,10 +8,10 @@ export default function InstagramHome() {
         <nav className="mb-10 flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
-            Tryby
+            WaveeRating
           </Link>
           <Link to="/classic" className="text-sm text-gray-400 transition hover:text-white">
-            WaveeBW Classic
+            Music tools
           </Link>
           <div className="flex flex-wrap gap-4 text-sm text-gray-400">
             <Link to="/feed" className="transition hover:text-white">Feed</Link>
@@ -23,13 +23,13 @@ export default function InstagramHome() {
           <div>
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-pink-500/30 bg-pink-500/10 px-4 py-2 text-sm text-pink-200">
               <Image className="h-4 w-4" />
-              Instagram Review Generator
+              WaveeRating
             </div>
             <h1 className="max-w-3xl text-4xl font-bold tracking-normal text-white sm:text-5xl">
-              Oceniaj albumy, utwory i buduj muzyczny profil.
+              Rate music. Build beautiful reviews. Share them anywhere.
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-gray-400">
-              Szukaj muzyki ze Spotify, zapisuj recenzje do biblioteki, publikuj profil i eksportuj gotowe slajdy na Instagram.
+              Search Spotify, save reviews to your library, publish your music profile, follow friends, and export Instagram-ready PNG/ZIP slides.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -70,7 +70,7 @@ export default function InstagramHome() {
                 to="/classic/search"
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-700 px-5 py-3 font-semibold text-gray-200 transition hover:border-gray-500 hover:bg-gray-900"
               >
-                Klasyczna wyszukiwarka
+                Spotify tools
                 <ArrowRight className="h-5 w-5" />
               </Link>
             </div>
@@ -82,7 +82,7 @@ export default function InstagramHome() {
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-semibold text-white">Wavee Reviews</p>
+                <p className="font-semibold text-white">WaveeRating</p>
                 <p className="text-sm text-gray-400">Ratings, profiles, exports</p>
               </div>
             </div>

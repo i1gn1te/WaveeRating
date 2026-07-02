@@ -3,14 +3,14 @@ import { CarouselStylePreset, SlideTemplate, SlideTemplateId } from '../../types
 export const SLIDE_TEMPLATES: SlideTemplate[] = [
   {
     id: 'classic-cover',
-    name: 'Classic Cover',
+    name: 'Signature Cover',
     slideType: 'cover',
     layout: 'classic',
     fontStyle: 'bold',
     coverPosition: 'center',
     scoreStyle: 'badge',
     textBoxStyle: 'solid-card',
-    vibe: 'Bold current WaveeBW look with a large cover and strong score treatment.',
+    vibe: 'Bold WaveeRating look with a large cover and strong score treatment.',
   },
   {
     id: 'editorial-review',
@@ -72,8 +72,8 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
 export const CAROUSEL_STYLE_PRESETS: CarouselStylePreset[] = [
   {
     id: 'classic-purple',
-    name: 'Classic Purple',
-    description: 'Current WaveeBW energy: large cover, strong shadow, big score.',
+    name: 'Signature Purple',
+    description: 'WaveeRating energy: large cover, strong shadow, big score.',
     templateId: 'classic-cover',
     theme: {
       backgroundColor: '#4c1d95',

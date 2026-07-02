@@ -8,7 +8,7 @@ export default function InstagramRate() {
         <nav className="mb-10 flex items-center justify-between">
           <Link to="/instagram" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
-            Instagram Review Generator
+            WaveeRating
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/instagram/profile" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
@@ -22,17 +22,17 @@ export default function InstagramRate() {
               Profile
             </Link>
             <Link to="/" className="text-sm text-gray-400 transition hover:text-white">
-              Tryby
+              Home
             </Link>
           </div>
         </nav>
 
         <section className="flex flex-1 flex-col justify-center">
           <div className="mb-8 max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-pink-300">Choose rating mode</p>
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-pink-300">WaveeRating</p>
             <h1 className="mt-3 text-4xl font-black tracking-normal text-white sm:text-5xl">What do you want to rate?</h1>
             <p className="mt-4 text-lg text-gray-400">
-              Start with a full album or EP, or prepare a single-song review draft.
+              Rate music, write a review, and export Instagram-ready slides whenever you need them.
             </p>
           </div>
 
@@ -46,7 +46,7 @@ export default function InstagramRate() {
               </div>
               <h2 className="text-2xl font-black text-white group-hover:text-pink-100">Rate Album / EP</h2>
               <p className="mt-3 text-gray-400">
-                Search Spotify albums, rate every track, set album categories, and export Instagram slides.
+                Search Spotify albums, rate every track, set album categories, and export share-ready slides.
               </p>
             </Link>
 
@@ -59,7 +59,7 @@ export default function InstagramRate() {
               </div>
               <h2 className="text-2xl font-black text-white group-hover:text-cyan-100">Rate Song</h2>
               <p className="mt-3 text-gray-400">
-                Search Spotify tracks, score categories, and export a single-song Instagram review slide.
+                Search Spotify tracks, score categories, and export a single-song review slide.
               </p>
             </Link>
           </div>

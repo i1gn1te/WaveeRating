@@ -33,7 +33,7 @@ import PublicAlbumReview from './pages/PublicAlbumReview'
 import PublicSongReview from './pages/PublicSongReview'
 import ProtectedRoute from './components/ProtectedRoute'
 
-function LegacyClassicRedirect() {
+function LegacyAppRedirect() {
   const location = useLocation()
 
   return <Navigate to={`/classic${location.pathname}${location.search}`} replace />
@@ -111,15 +111,15 @@ function App() {
             } />
           </Route>
 
-          <Route path="/login" element={<LegacyClassicRedirect />} />
-          <Route path="/dashboard" element={<LegacyClassicRedirect />} />
-          <Route path="/search" element={<LegacyClassicRedirect />} />
-          <Route path="/track/:trackId" element={<LegacyClassicRedirect />} />
-          <Route path="/reviews" element={<LegacyClassicRedirect />} />
-          <Route path="/generator" element={<LegacyClassicRedirect />} />
-          <Route path="/community" element={<LegacyClassicRedirect />} />
-          <Route path="/community/:userId" element={<LegacyClassicRedirect />} />
-          <Route path="/profile" element={<LegacyClassicRedirect />} />
+          <Route path="/login" element={<LegacyAppRedirect />} />
+          <Route path="/dashboard" element={<LegacyAppRedirect />} />
+          <Route path="/search" element={<LegacyAppRedirect />} />
+          <Route path="/track/:trackId" element={<LegacyAppRedirect />} />
+          <Route path="/reviews" element={<LegacyAppRedirect />} />
+          <Route path="/generator" element={<LegacyAppRedirect />} />
+          <Route path="/community" element={<LegacyAppRedirect />} />
+          <Route path="/community/:userId" element={<LegacyAppRedirect />} />
+          <Route path="/profile" element={<LegacyAppRedirect />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
