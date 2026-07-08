@@ -48,10 +48,10 @@ export default function RatingSlider({
   } as CSSProperties
 
   return (
-    <label className={`block rounded-lg border border-gray-800 bg-gray-900 ${compact ? 'p-3' : 'p-4'} ${disabled ? 'opacity-60' : ''}`}>
+    <label className={`block min-w-0 rounded-lg border border-gray-800 bg-gray-900 ${compact ? 'p-3' : 'p-4'} ${disabled ? 'opacity-60' : ''}`}>
       <div className="mb-3 flex items-center justify-between gap-4">
-        <span className="text-sm font-medium text-gray-200">{label}</span>
-        <span className={compact ? 'text-xl font-black' : 'text-2xl font-black'} style={{ color }}>
+        <span className="min-w-0 text-sm font-medium leading-5 text-gray-200">{label}</span>
+        <span className={`shrink-0 ${compact ? 'text-xl font-black' : 'text-2xl font-black'}`} style={{ color }}>
           {value.toFixed(1)}/10
         </span>
       </div>

@@ -22,7 +22,7 @@ export function getTitleSize(title: string | null | undefined, baseSize = '7.2cq
   const unit = baseSize.match(/[a-z%]+$/i)?.[0] || 'cqw'
   const length = String(title || '').length
   const factor = length > 50 ? 0.58 : length > 35 ? 0.68 : length > 20 ? 0.82 : 1
-  const minimum = unit === 'cqw' ? 4.1 : numeric * 0.58
+  const minimum = unit === 'cqw' ? Math.min(4.1, numeric * 0.72) : numeric * 0.58
 
   return `${Math.max(minimum, numeric * factor).toFixed(2)}${unit}`
 }
@@ -65,5 +65,7 @@ export function lineClampStyle(lines: number): CSSProperties {
     WebkitBoxOrient: 'vertical',
     WebkitLineClamp: lines,
     overflow: 'hidden',
+    paddingTop: '0.08em',
+    paddingBottom: '0.16em',
   }
 }

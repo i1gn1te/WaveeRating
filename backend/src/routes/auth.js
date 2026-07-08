@@ -12,6 +12,12 @@ const spotify_js_1 = require("../lib/spotify.js");
 const auth_js_1 = require("../middleware/auth.js");
 const config_js_1 = require("../lib/config.js");
 const router = (0, express_1.Router)();
+function authDebug(message, meta = {}) {
+    if (process.env.NODE_ENV === 'production') {
+        return;
+    }
+    console.log(`[Auth] ${message}`, meta);
+}
 const DEMO_USER = {
     id: 'demo_user',
     spotifyId: 'demo_user',
@@ -28,7 +34,7 @@ function isSpotifyOAuthConfigured() {
 function requireJwtSecret() {
     return (0, config_js_1.getJwtSecret)();
 }
-function createSessionToken(user, spotifyAccessToken = 'demo_token', spotifyRefreshToken = 'demo_refresh') {
+function createSessionToken(user, spotifyAccessToken = null, spotifyRefreshToken = null) {
     return jsonwebtoken_1.default.sign({
         userId: user.id,
         spotifyAccessToken,
@@ -98,6 +104,7 @@ const localAuthSchema = zod_1.z.object({
 // Rejestracja email/haslo
 router.post('/register', async (req, res) => {
     try {
+        authDebug('register attempt', { emailPresent: Boolean(req.body?.email), displayNamePresent: Boolean(req.body?.displayName) });
         const configError = ensureLocalAuthConfigured(res, 'registration');
         if (configError) {
             return configError;
@@ -133,6 +140,7 @@ router.post('/register', async (req, res) => {
             favoriteGenres: user.favoriteGenres || [],
         };
         sendSessionCookie(res, createSessionToken(sessionUser));
+        authDebug('register success', { userId: user.id });
         return res.status(201).json({ success: true, user: { id: user.id, email: user.email, displayName: user.displayName } });
     }
     catch (error) {
@@ -146,6 +154,7 @@ router.post('/register', async (req, res) => {
 // Logowanie email/haslo
 router.post('/local-login', async (req, res) => {
     try {
+        authDebug('local-login attempt', { emailPresent: Boolean(req.body?.email) });
         const configError = ensureLocalAuthConfigured(res, 'login');
         if (configError) {
             return configError;
@@ -180,6 +189,7 @@ router.post('/local-login', async (req, res) => {
             favoriteGenres: user.favoriteGenres || [],
         };
         sendSessionCookie(res, createSessionToken(sessionUser));
+        authDebug('local-login success', { userId: user.id });
         return res.json({ success: true, user: { id: user.id, email: user.email, displayName: user.displayName } });
     }
     catch (error) {
@@ -216,7 +226,7 @@ router.post('/demo-login', async (_req, res) => {
             return configError;
         }
         res.clearCookie('token', (0, config_js_1.getClearCookieOptions)());
-        sendSessionCookie(res, createSessionToken(DEMO_USER));
+        sendSessionCookie(res, createSessionToken(DEMO_USER, 'demo_token', 'demo_refresh'));
         res.json({ success: true, message: 'Demo login successful', user: DEMO_USER });
     }
     catch (error) {
@@ -322,6 +332,7 @@ router.get('/callback', async (req, res) => {
 // Pobiera biezacego uzytkownika
 router.get('/me', auth_js_1.authMiddleware, async (req, res) => {
     try {
+        authDebug('me request', { userId: req.userId, fallbackUserPresent: Boolean(req.authUser) });
         if (req.spotifyAccessToken === 'demo_token' || req.userId === DEMO_USER.id) {
             return res.json(DEMO_USER);
         }
@@ -331,10 +342,12 @@ router.get('/me', auth_js_1.authMiddleware, async (req, res) => {
         });
         if (!user) {
             if (req.authUser) {
+                authDebug('me fallback user', { userResolved: true });
                 return res.json(req.authUser);
             }
             return res.status(404).json({ error: 'User not found' });
         }
+        authDebug('me db user', { userResolved: true });
         res.json(user);
     }
     catch (error) {

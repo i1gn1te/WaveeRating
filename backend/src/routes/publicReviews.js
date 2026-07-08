@@ -47,6 +47,6 @@ function isPubliclyReadable(review) {
     if (!review || review.isDraft || review.visibility === 'private') {
         return false;
     }
-    return review.visibility === 'public' || review.visibility === 'unlisted';
+    return review.visibility === 'public';
 }
 exports.default = router;

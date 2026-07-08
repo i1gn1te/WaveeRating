@@ -70,8 +70,19 @@ export const getArtist = (artistId: string) => api.get(`/spotify/artists/${artis
 export const getArtistAlbums = (artistId: string) => api.get(`/spotify/artists/${artistId}/albums`, { params: { limit: 20 } })
 export const searchPublicTracks = (query: string) => api.get('/spotify/search-tracks', { params: { q: query, limit: 4 } })
 export const getPublicTrack = (trackId: string) => api.get(`/spotify/tracks/${trackId}`)
-export const getSpotifyImageProxyUrl = (url?: string | null) =>
-  url ? `${API_BASE_URL}/spotify/image-proxy?url=${encodeURIComponent(url)}` : null
+export const getSpotifyImageProxyUrl = (url?: string | null, cacheKey?: string | null) => {
+  if (!url) {
+    return null
+  }
+
+  const params = new URLSearchParams({ url })
+
+  if (cacheKey) {
+    params.set('cacheKey', cacheKey)
+  }
+
+  return `${API_BASE_URL}/spotify/image-proxy?${params.toString()}`
+}
 
 export default api
 

@@ -11,13 +11,11 @@ import SongExportButton from '../components/instagram/SongExportButton'
 import SongReviewSlidePreview from '../components/instagram/SongReviewSlidePreview'
 import ThemePresetPicker from '../components/instagram/ThemePresetPicker'
 import CarouselTemplatePicker from '../components/instagram/CarouselTemplatePicker'
-import TextSettingsControls from '../components/instagram/TextSettingsControls'
 import {
   CarouselStylePreset,
   ReviewVisibility,
   ReviewTheme,
   SlideTemplateId,
-  SlideTextSettings,
   SONG_RATING_CATEGORIES,
   SongCategoryRatings,
   SongDraftTrackData,
@@ -30,13 +28,6 @@ const REVIEW_TEXT_LIMITS = {
   body: 2000,
   recommendation: 300,
   moodTags: 120,
-}
-
-const DEFAULT_TEXT_SETTINGS: SlideTextSettings = {
-  titleSize: 'medium',
-  bodySize: 'medium',
-  uppercaseHeadings: true,
-  fontMood: 'bold',
 }
 
 function average(values: number[]) {
@@ -111,10 +102,10 @@ function ScoreNumberInput({
   const handleInput = (rawValue: string) => onChange(clampRatingScore(Number(rawValue)))
 
   return (
-    <label className="block rounded-lg border border-gray-800 bg-gray-900 p-4">
+    <label className="block min-w-0 rounded-lg border border-gray-800 bg-gray-900 p-4">
       <div className="mb-3 flex items-center justify-between gap-4">
-        <span className="text-sm font-medium text-gray-200">{label}</span>
-        <span className="text-2xl font-black" style={{ color }}>
+        <span className="min-w-0 text-sm font-medium leading-5 text-gray-200">{label}</span>
+        <span className="shrink-0 text-2xl font-black" style={{ color }}>
           {value.toFixed(1)}/10
         </span>
       </div>
@@ -144,14 +135,14 @@ function ColorInput({
   const handleInput = (rawValue: string) => onChange(rawValue)
 
   return (
-    <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-300">
-      <span>{label}</span>
+    <label className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-300">
+      <span className="min-w-0 truncate">{label}</span>
       <input
         type="color"
         value={value}
         onInput={(event) => handleInput(event.currentTarget.value)}
         onChange={(event) => handleInput(event.currentTarget.value)}
-        className="h-9 w-12 rounded border-0 bg-transparent"
+        className="h-9 w-12 shrink-0 rounded border-0 bg-transparent"
       />
     </label>
   )
@@ -188,7 +179,6 @@ export default function SongReviewBuilder() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [carouselPresetId, setCarouselPresetId] = useState('signature-purple')
   const [templateId, setTemplateId] = useState<SlideTemplateId>('signature-cover')
-  const [textSettings, setTextSettings] = useState<SlideTextSettings>(DEFAULT_TEXT_SETTINGS)
   const [slideStyle, setSlideStyle] = useState<ReviewTheme>({
     backgroundColor: '#083344',
     cardColor: '#10232f',
@@ -247,7 +237,6 @@ export default function SongReviewBuilder() {
       theme: slideStyle,
       visibility,
       templateId,
-      textSettings,
     }
   }, [
     categoryRatings,
@@ -261,7 +250,6 @@ export default function SongReviewBuilder() {
     reviewTitle,
     slideStyle,
     templateId,
-    textSettings,
     track,
     useDetailedRating,
     visibility,
@@ -275,7 +263,6 @@ export default function SongReviewBuilder() {
     setCarouselPresetId(preset.id)
     setSlideStyle(preset.theme)
     setTemplateId(preset.templateId)
-    setTextSettings(preset.textSettings)
   }
 
   const handleSaveReview = async (isDraft: boolean) => {
@@ -317,13 +304,12 @@ export default function SongReviewBuilder() {
         slideData: {
           moodTags,
           templateId,
-          textSettings,
         },
         isDraft,
-        isPublic: visibility !== 'private',
-        visibility,
+        isPublic: isDraft ? false : visibility !== 'private',
+        visibility: isDraft ? 'private' : visibility,
       })
-      setSaveMessage(isDraft ? 'Draft saved.' : 'Review saved to your profile.')
+      setSaveMessage(isDraft ? 'Draft saved.' : 'Review published to your profile.')
     } catch (error) {
       setSaveError((error as any)?.response?.data?.error || 'Failed to save review.')
     } finally {
@@ -365,7 +351,7 @@ export default function SongReviewBuilder() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white" data-draft-ready={songReviewDraft ? 'true' : 'false'}>
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[92rem] px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link to="/songs" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
@@ -400,8 +386,8 @@ export default function SongReviewBuilder() {
           </div>
         </section>
 
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-8">
+        <div className="grid gap-10 xl:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)] 2xl:gap-12">
+          <div className="min-w-0 space-y-8">
             <section className="rounded-xl border border-gray-800 bg-gray-950 p-5">
               <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -471,7 +457,7 @@ export default function SongReviewBuilder() {
                   onChange={(event) => setReviewTitle(event.target.value)}
                   placeholder="Review title / short verdict..."
                   maxLength={REVIEW_TEXT_LIMITS.title + 1}
-                  className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                  className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
                 />
                 <FieldMeta count={reviewTitle.length} max={REVIEW_TEXT_LIMITS.title} error={textErrors.reviewTitle || undefined} />
                 <textarea
@@ -480,7 +466,7 @@ export default function SongReviewBuilder() {
                   placeholder="Song review body..."
                   rows={6}
                   maxLength={REVIEW_TEXT_LIMITS.body + 1}
-                  className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                  className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
                 />
                 <FieldMeta count={reviewBody.length} max={REVIEW_TEXT_LIMITS.body} error={textErrors.reviewBody || undefined} />
                 <textarea
@@ -489,7 +475,7 @@ export default function SongReviewBuilder() {
                   placeholder="Final note / recommendation..."
                   rows={3}
                   maxLength={REVIEW_TEXT_LIMITS.recommendation + 1}
-                  className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                  className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
                 />
                 <FieldMeta count={finalNote.length} max={REVIEW_TEXT_LIMITS.recommendation} error={textErrors.finalNote || undefined} />
                 <input
@@ -497,7 +483,7 @@ export default function SongReviewBuilder() {
                   onChange={(event) => setMoodTags(event.target.value)}
                   placeholder="Mood / tags, e.g. dreamy, tense, replayable..."
                   maxLength={REVIEW_TEXT_LIMITS.moodTags + 1}
-                  className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                  className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
                 />
                 <FieldMeta count={moodTags.length} max={REVIEW_TEXT_LIMITS.moodTags} error={textErrors.moodTags || undefined} />
               </div>
@@ -509,9 +495,6 @@ export default function SongReviewBuilder() {
               <h2 className="text-xl font-bold">Style customization</h2>
               <div className="mt-5">
                 <CarouselTemplatePicker selectedId={carouselPresetId} onSelect={applyCarouselPreset} />
-              </div>
-              <div className="mt-5">
-                <TextSettingsControls value={textSettings} onChange={setTextSettings} />
               </div>
               <div className="mt-5">
                 <ThemePresetPicker onSelect={(theme) => setSlideStyle(theme)} />
@@ -552,7 +535,7 @@ export default function SongReviewBuilder() {
             </section>
           </div>
 
-          <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
+          <aside className="min-w-0 space-y-5 xl:sticky xl:top-6 xl:self-start">
             <ReviewSaveActions
               isAuthenticated={isAuthenticated}
               isSaving={isSavingReview}
@@ -563,9 +546,10 @@ export default function SongReviewBuilder() {
             />
             <SongExportButton track={track} style={slideStyle} targetRef={songReviewRef} />
             <SongReviewSlidePreview
-              key={`${track.id}-${track.imageUrl || 'no-cover'}`}
+              key={`song-export-${track.id}-${track.imageUrl || 'no-cover'}`}
               ref={songReviewRef}
               track={track}
+              imageUrl={track.imageUrl || null}
               style={slideStyle}
               finalScore={finalScore}
               verdict={reviewTitle}
@@ -573,7 +557,6 @@ export default function SongReviewBuilder() {
               finalNote={finalNote}
               moodTags={moodTags}
               templateId={templateId}
-              textSettings={textSettings}
             />
           </aside>
         </div>
@@ -595,14 +578,13 @@ function VisibilitySelect({ value, onChange }: { value: ReviewVisibility; onChan
   return (
     <section className="rounded-xl border border-gray-800 bg-gray-950 p-5">
       <h2 className="text-xl font-bold">Review visibility</h2>
-      <p className="mt-1 text-sm text-gray-400">Public reviews appear on your profile and feed. Unlisted reviews only open by direct link.</p>
+      <p className="mt-1 text-sm text-gray-400">Public reviews appear on your profile and feed. Private reviews stay in your library.</p>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as ReviewVisibility)}
         className="mt-5 w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
       >
         <option value="public">Public</option>
-        <option value="unlisted">Unlisted</option>
         <option value="private">Private</option>
       </select>
     </section>

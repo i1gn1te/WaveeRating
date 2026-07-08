@@ -10,7 +10,6 @@ import {
   AlbumReviewSlidePreview,
   BestTrackSlidePreview,
   CoverSlidePreview,
-  DEFAULT_TEXT_SETTINGS,
   ReviewAlbum,
   ReviewTrack,
   SlideStyle,
@@ -23,7 +22,6 @@ import CarouselZipExportButton from '../components/instagram/CarouselZipExportBu
 import ThemePresetPicker from '../components/instagram/ThemePresetPicker'
 import CarouselTemplatePicker from '../components/instagram/CarouselTemplatePicker'
 import CarouselSlidesPanel from '../components/instagram/CarouselSlidesPanel'
-import TextSettingsControls from '../components/instagram/TextSettingsControls'
 import {
   ALBUM_RATING_CATEGORIES,
   AlbumCategoryRatings,
@@ -32,7 +30,6 @@ import {
   CarouselSlideConfig,
   ReviewVisibility,
   SlideTemplateId,
-  SlideTextSettings,
   SONG_RATING_CATEGORIES,
   SongCategoryRatings,
   TrackRating,
@@ -192,10 +189,10 @@ function ScoreNumberInput({
   const handleInput = (rawValue: string) => onChange(clampRatingScore(Number(rawValue)))
 
   return (
-    <label className="block rounded-lg border border-gray-800 bg-gray-900 p-4">
+    <label className="block min-w-0 rounded-lg border border-gray-800 bg-gray-900 p-4">
       <div className="mb-3 flex items-center justify-between gap-4">
-        <span className="text-sm font-medium text-gray-200">{label}</span>
-        <span className="text-2xl font-black" style={{ color }}>
+        <span className="min-w-0 text-sm font-medium leading-5 text-gray-200">{label}</span>
+        <span className="shrink-0 text-2xl font-black" style={{ color }}>
           {value.toFixed(1)}/10
         </span>
       </div>
@@ -225,14 +222,14 @@ function ColorInput({
   const handleInput = (rawValue: string) => onChange(rawValue)
 
   return (
-    <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-300">
-      <span>{label}</span>
+    <label className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-300">
+      <span className="min-w-0 truncate">{label}</span>
       <input
         type="color"
         value={value}
         onInput={(event) => handleInput(event.currentTarget.value)}
         onChange={(event) => handleInput(event.currentTarget.value)}
-        className="h-9 w-12 rounded border-0 bg-transparent"
+        className="h-9 w-12 shrink-0 rounded border-0 bg-transparent"
       />
     </label>
   )
@@ -286,7 +283,6 @@ export default function AlbumReviewBuilder() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [carouselPresetId, setCarouselPresetId] = useState('signature-purple')
   const [templateId, setTemplateId] = useState<SlideTemplateId>('signature-cover')
-  const [textSettings, setTextSettings] = useState<SlideTextSettings>(DEFAULT_TEXT_SETTINGS)
   const [albumSlides, setAlbumSlides] = useState<CarouselSlideConfig<AlbumCarouselSlideId>[]>(DEFAULT_ALBUM_SLIDES)
   const [slideStyle, setSlideStyle] = useState<SlideStyle>({
     backgroundColor: '#4c1d95',
@@ -334,8 +330,8 @@ export default function AlbumReviewBuilder() {
       verdict: limitError('Review title', verdict, REVIEW_TEXT_LIMITS.title),
       albumReview: limitError('Review body', albumReview, REVIEW_TEXT_LIMITS.body),
       recommendation: limitError('Final recommendation', recommendation, REVIEW_TEXT_LIMITS.recommendation),
-      bestTrackReview: limitError('Best track note', bestTrackReview, REVIEW_TEXT_LIMITS.spotlight),
-      weakestTrackReview: limitError('Weakest track note', weakestTrackReview, REVIEW_TEXT_LIMITS.spotlight),
+      bestTrackReview: limitError('Review note', bestTrackReview, REVIEW_TEXT_LIMITS.spotlight),
+      weakestTrackReview: limitError('Review note', weakestTrackReview, REVIEW_TEXT_LIMITS.spotlight),
     }),
     [albumReview, bestTrackReview, recommendation, verdict, weakestTrackReview]
   )
@@ -417,7 +413,6 @@ export default function AlbumReviewBuilder() {
       theme: slideStyle,
       visibility,
       templateId,
-      textSettings,
       slideOrder: albumSlides,
     }
   }, [
@@ -433,7 +428,6 @@ export default function AlbumReviewBuilder() {
     albumSlides,
     slideStyle,
     templateId,
-    textSettings,
     trackAverage,
     trackRatingList,
     verdict,
@@ -488,7 +482,6 @@ export default function AlbumReviewBuilder() {
     setCarouselPresetId(preset.id)
     setSlideStyle(preset.theme)
     setTemplateId(preset.templateId)
-    setTextSettings(preset.textSettings)
   }
 
   const updateTrackRating = (track: ReviewTrack, updater: (current: TrackRating) => TrackRating) => {
@@ -546,14 +539,13 @@ export default function AlbumReviewBuilder() {
           bestTrackReview,
           weakestTrackReview,
           templateId,
-          textSettings,
           slideOrder: albumSlides,
         },
         isDraft,
-        isPublic: visibility !== 'private',
-        visibility,
+        isPublic: isDraft ? false : visibility !== 'private',
+        visibility: isDraft ? 'private' : visibility,
       })
-      setSaveMessage(isDraft ? 'Draft saved.' : 'Review saved to your profile.')
+      setSaveMessage(isDraft ? 'Draft saved.' : 'Review published to your profile.')
     } catch (error) {
       setSaveError((error as any)?.response?.data?.error || 'Failed to save review.')
     } finally {
@@ -596,7 +588,7 @@ export default function AlbumReviewBuilder() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white" data-draft-ready={albumReviewDraft ? 'true' : 'false'}>
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[96rem] px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
         <nav className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link to="/albums" className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
@@ -635,8 +627,8 @@ export default function AlbumReviewBuilder() {
           </div>
         </section>
 
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-8">
+        <div className="grid gap-10 xl:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)] 2xl:gap-12">
+          <div className="min-w-0 space-y-8">
             <section className="rounded-xl border border-gray-800 bg-gray-950">
               <div className="border-b border-gray-800 p-5">
                 <h2 className="text-xl font-bold">Track ratings</h2>
@@ -809,7 +801,7 @@ export default function AlbumReviewBuilder() {
               )}
             </section>
 
-            <section className="grid gap-5 md:grid-cols-2">
+            <section className="grid gap-5 xl:grid-cols-2">
               <TrackSpotlightEditor
                 title="Best Track"
                 tracks={tracks}
@@ -848,7 +840,7 @@ export default function AlbumReviewBuilder() {
                   onChange={(event) => setVerdict(event.target.value)}
                   placeholder="Short verdict/title..."
                   maxLength={REVIEW_TEXT_LIMITS.title + 1}
-                  className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
+                  className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
                 />
                 <FieldMeta count={verdict.length} max={REVIEW_TEXT_LIMITS.title} error={textErrors.verdict || undefined} />
                 <textarea
@@ -857,7 +849,7 @@ export default function AlbumReviewBuilder() {
                   placeholder="Full album review..."
                   rows={6}
                   maxLength={REVIEW_TEXT_LIMITS.body + 1}
-                  className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
+                  className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
                 />
                 <FieldMeta count={albumReview.length} max={REVIEW_TEXT_LIMITS.body} error={textErrors.albumReview || undefined} />
                 <textarea
@@ -866,7 +858,7 @@ export default function AlbumReviewBuilder() {
                   placeholder="Italic-style final recommendation..."
                   rows={3}
                   maxLength={REVIEW_TEXT_LIMITS.recommendation + 1}
-                  className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
+                  className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
                 />
                 <FieldMeta count={recommendation.length} max={REVIEW_TEXT_LIMITS.recommendation} error={textErrors.recommendation || undefined} />
               </div>
@@ -880,9 +872,6 @@ export default function AlbumReviewBuilder() {
               <h2 className="text-xl font-bold">Style customization</h2>
               <div className="mt-5">
                 <CarouselTemplatePicker selectedId={carouselPresetId} onSelect={applyCarouselPreset} />
-              </div>
-              <div className="mt-5">
-                <TextSettingsControls value={textSettings} onChange={setTextSettings} />
               </div>
               <div className="mt-5">
                 <ThemePresetPicker onSelect={(theme) => setSlideStyle(theme)} />
@@ -923,7 +912,7 @@ export default function AlbumReviewBuilder() {
             </section>
           </div>
 
-          <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
+          <aside className="min-w-0 space-y-5 xl:sticky xl:top-6 xl:self-start">
             <ReviewSaveActions
               isAuthenticated={isAuthenticated}
               isSaving={isSavingReview}
@@ -951,7 +940,7 @@ export default function AlbumReviewBuilder() {
             />
             {albumSlides.filter((slide) => slide.enabled).map((slide) => {
               if (slide.id === 'cover') {
-                return <CoverSlidePreview key={slide.id} ref={coverSlideRef} album={album} style={slideStyle} templateId={templateId} textSettings={textSettings} />
+                return <CoverSlidePreview key={slide.id} ref={coverSlideRef} album={album} style={slideStyle} templateId={templateId} />
               }
 
               if (slide.id === 'review') {
@@ -967,7 +956,6 @@ export default function AlbumReviewBuilder() {
                     recommendation={recommendation}
                     categoryRatings={albumCategoryRatings}
                     templateId={templateId}
-                    textSettings={textSettings}
                   />
                 )
               }
@@ -982,7 +970,6 @@ export default function AlbumReviewBuilder() {
                     finalScore={finalAlbumScore}
                     trackRatings={trackRatingList}
                     templateId={templateId}
-                    textSettings={textSettings}
                   />
                 )
               }
@@ -998,7 +985,6 @@ export default function AlbumReviewBuilder() {
                     score={bestTrackScore}
                     text={bestTrackReview}
                     templateId={templateId}
-                    textSettings={textSettings}
                   />
                 )
               }
@@ -1013,7 +999,6 @@ export default function AlbumReviewBuilder() {
                   score={weakestTrackScore}
                   text={weakestTrackReview}
                   templateId={templateId}
-                  textSettings={textSettings}
                 />
               )
             })}
@@ -1026,16 +1011,15 @@ export default function AlbumReviewBuilder() {
 
 function VisibilitySelect({ value, onChange }: { value: ReviewVisibility; onChange: (value: ReviewVisibility) => void }) {
   return (
-    <section className="rounded-xl border border-gray-800 bg-gray-950 p-5">
+    <section className="min-w-0 rounded-xl border border-gray-800 bg-gray-950 p-5">
       <h2 className="text-xl font-bold">Review visibility</h2>
-      <p className="mt-1 text-sm text-gray-400">Public reviews appear on your profile and feed. Unlisted reviews only open by direct link.</p>
+      <p className="mt-1 text-sm text-gray-400">Public reviews appear on your profile and feed. Private reviews stay in your library.</p>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as ReviewVisibility)}
         className="mt-5 w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
       >
         <option value="public">Public</option>
-        <option value="unlisted">Unlisted</option>
         <option value="private">Private</option>
       </select>
     </section>
@@ -1088,7 +1072,7 @@ function TrackSpotlightEditor({
         <select
           value={selectedId}
           onChange={(event) => onTrackChange(event.target.value)}
-          className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
+        className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
         >
           {tracks.map((track) => {
             const score = trackRatingById[track.id]?.finalScore ?? 7
@@ -1104,10 +1088,10 @@ function TrackSpotlightEditor({
         <textarea
           value={text}
           onChange={(event) => onTextChange(event.target.value)}
-          placeholder={`Short ${title.toLowerCase()} review...`}
+          placeholder="Review..."
           rows={4}
           maxLength={REVIEW_TEXT_LIMITS.spotlight + 1}
-          className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
+          className="w-full min-w-0 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-white outline-none transition focus:border-pink-400"
         />
         <FieldMeta count={text.length} max={REVIEW_TEXT_LIMITS.spotlight} error={error} />
       </div>

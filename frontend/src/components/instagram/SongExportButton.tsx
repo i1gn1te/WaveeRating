@@ -66,16 +66,32 @@ export default function SongExportButton({ track, style, targetRef }: SongExport
 
   const exportSongReview = async () => {
     const node = targetRef.current
+    const stalePreviewMessage = 'Could not export: stale song preview. Refresh and try again.'
+    const expectedImageUrl = track.imageUrl || ''
+
     if (!node) {
       throw new Error('Song Review Slide is not ready yet.')
     }
 
-    if (node.dataset.exportType && node.dataset.exportType !== 'song-review') {
-      throw new Error('Song export is pointed at the wrong slide.')
+    if (node.dataset.exportType !== 'song-review') {
+      throw new Error(stalePreviewMessage)
     }
 
-    if (node.dataset.entityId && node.dataset.entityId !== track.id) {
-      throw new Error('Song export slide is stale. Wait a moment and try again.')
+    if (node.dataset.entityId !== track.id) {
+      throw new Error(stalePreviewMessage)
+    }
+
+    if ((node.dataset.imageUrl || '') !== expectedImageUrl) {
+      if (import.meta.env.DEV) {
+        console.warn('[WaveeRating Export] Stale song image before PNG export.', {
+          type: 'song-review',
+          trackId: track.id,
+          expectedImageUrl,
+          actualImageUrl: node.dataset.imageUrl || '',
+        })
+      }
+
+      throw new Error(stalePreviewMessage)
     }
 
     if (import.meta.env.DEV) {
@@ -142,7 +158,7 @@ export default function SongExportButton({ track, style, targetRef }: SongExport
       setMessage('PNG exported.')
     } catch (err) {
       console.error('[Instagram Song Export] Failed:', err)
-      setError('Could not export PNG. Try again.')
+      setError((err as Error)?.message || 'Could not export PNG. Try again.')
     } finally {
       setExporting(false)
     }

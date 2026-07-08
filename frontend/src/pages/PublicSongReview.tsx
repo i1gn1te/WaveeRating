@@ -193,7 +193,7 @@ export default function PublicSongReview() {
 
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-200">
-                  Song review {review.visibility === 'unlisted' ? ' / unlisted' : ''}
+                  Song review
                 </p>
                 <h1 className="mt-2 text-3xl font-black tracking-normal text-white sm:text-4xl">{review.trackTitle}</h1>
                 <p className="mt-2 text-gray-400">{artistLine(review.trackArtists)}</p>
@@ -242,13 +242,27 @@ export default function PublicSongReview() {
           <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
             <SongExportButton track={trackForPreview} style={style} targetRef={songSlideRef} />
             <CarouselZipExportButton
+              label="Export Song Review ZIP"
+              title="Song Review ZIP"
+              description="Pack the current song review PNG into one ZIP file."
               zipFilename={`${slugify(review.trackArtists?.[0]?.name || 'unknown-artist')}-${slugify(review.trackTitle)}-instagram-review.zip`}
               style={style}
-              targets={[{ filename: '01-song-review.png', label: 'Song Review Slide', ref: songSlideRef }]}
+              targets={[
+                {
+                  filename: '01-song-review.png',
+                  label: 'Song Review Slide',
+                  ref: songSlideRef,
+                  type: 'song-review',
+                  entityId: trackForPreview.id,
+                  imageUrl: trackForPreview.imageUrl || null,
+                },
+              ]}
             />
             <SongReviewSlidePreview
+              key={`song-export-${trackForPreview.id}-${trackForPreview.imageUrl || 'no-cover'}`}
               ref={songSlideRef}
               track={trackForPreview}
+              imageUrl={trackForPreview.imageUrl || null}
               style={style}
               finalScore={review.finalScore}
               verdict={review.reviewTitle || ''}

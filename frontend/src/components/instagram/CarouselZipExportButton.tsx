@@ -16,6 +16,8 @@ export interface ZipSlideTarget {
 
 interface CarouselZipExportButtonProps {
   label?: string
+  title?: string
+  description?: string
   zipFilename: string
   style: ReviewTheme
   targets: ZipSlideTarget[]
@@ -63,15 +65,41 @@ async function exportSlide(target: ZipSlideTarget, style: ReviewTheme) {
     throw new Error('One of the slides is not ready yet.')
   }
 
+  const staleSongPreviewMessage = 'Could not export: stale song preview. Refresh and try again.'
+  const node = ref.current
+  const nodeImageUrl = node.dataset.imageUrl || ''
+  const targetImageUrl = target.imageUrl || ''
+
+  if (target.type && node.dataset.exportType !== target.type) {
+    throw new Error(target.type === 'song-review' ? staleSongPreviewMessage : 'One of the slides is stale. Refresh and try again.')
+  }
+
+  if (target.entityId && node.dataset.entityId !== target.entityId) {
+    throw new Error(target.type === 'song-review' ? staleSongPreviewMessage : 'One of the slides is stale. Refresh and try again.')
+  }
+
+  if (target.type === 'song-review' && target.imageUrl !== undefined && nodeImageUrl !== targetImageUrl) {
+    if (import.meta.env.DEV) {
+      console.warn('[WaveeRating Export] Stale song image before ZIP export.', {
+        type: 'song-review',
+        trackId: target.entityId || null,
+        expectedImageUrl: targetImageUrl,
+        actualImageUrl: nodeImageUrl,
+      })
+    }
+
+    throw new Error(staleSongPreviewMessage)
+  }
+
   if (import.meta.env.DEV) {
     console.info('[WaveeRating Export]', {
       type: target.type || target.label,
-      entityId: target.entityId || ref.current.dataset.entityId || null,
-      imageUrl: target.imageUrl || ref.current.dataset.imageUrl || null,
+      entityId: target.entityId || node.dataset.entityId || null,
+      imageUrl: target.imageUrl || node.dataset.imageUrl || null,
     })
   }
 
-  await waitForImages(ref.current)
+  await waitForImages(node)
 
   const exportStyle = {
     width: `${EXPORT_SLIDE_WIDTH}px`,
@@ -92,7 +120,7 @@ async function exportSlide(target: ZipSlideTarget, style: ReviewTheme) {
     '--slide-radius': `${style.borderRadius}px`,
   } as Partial<CSSStyleDeclaration> & Record<string, string>
 
-  return toPng(ref.current, {
+  return toPng(node, {
     cacheBust: true,
     skipFonts: true,
     pixelRatio: 1,
@@ -105,7 +133,14 @@ async function exportSlide(target: ZipSlideTarget, style: ReviewTheme) {
   })
 }
 
-export default function CarouselZipExportButton({ label = 'Export Carousel ZIP', zipFilename, style, targets }: CarouselZipExportButtonProps) {
+export default function CarouselZipExportButton({
+  label = 'Export Carousel ZIP',
+  title = 'Export ZIP',
+  description = 'Pack carousel PNGs into one file.',
+  zipFilename,
+  style,
+  targets,
+}: CarouselZipExportButtonProps) {
   const [exporting, setExporting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -132,7 +167,7 @@ export default function CarouselZipExportButton({ label = 'Export Carousel ZIP',
       setMessage('ZIP exported.')
     } catch (err) {
       console.error('[Instagram ZIP Export] Failed:', err)
-      setError('Could not export ZIP. Try again.')
+      setError((err as Error)?.message || 'Could not export ZIP. Try again.')
     } finally {
       setExporting(false)
     }
@@ -142,8 +177,8 @@ export default function CarouselZipExportButton({ label = 'Export Carousel ZIP',
     <section className="rounded-xl border border-gray-800 bg-gray-950 p-5">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-white">Export ZIP</h2>
-          <p className="mt-1 text-sm text-gray-400">Pack carousel PNGs into one file.</p>
+          <h2 className="text-lg font-bold text-white">{title}</h2>
+          <p className="mt-1 text-sm text-gray-400">{description}</p>
         </div>
         {exporting && <Loader2 className="h-5 w-5 animate-spin text-pink-300" />}
       </div>

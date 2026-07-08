@@ -19,7 +19,7 @@ export const ALBUM_RATING_CATEGORIES = [
 export type RatingCategory = string
 export type AlbumCategoryRatings = Record<(typeof ALBUM_RATING_CATEGORIES)[number], number>
 export type SongCategoryRatings = Record<(typeof SONG_RATING_CATEGORIES)[number], number>
-export type ReviewVisibility = 'public' | 'private' | 'unlisted'
+export type ReviewVisibility = 'public' | 'private'
 
 export type SlideTemplateId =
   | 'signature-cover'
@@ -28,8 +28,9 @@ export type SlideTemplateId =
   | 'minimal-card'
   | 'magazine-layout'
   | 'compact-summary'
+  | 'retro-desktop'
 
-export type SlideLayoutMode = 'signature' | 'editorial' | 'poster' | 'minimal' | 'magazine' | 'compact'
+export type SlideLayoutMode = 'signature' | 'editorial' | 'poster' | 'minimal' | 'magazine' | 'compact' | 'retro'
 export type SlideTextSize = 'small' | 'medium' | 'large'
 export type SlideFontMood = 'clean' | 'editorial' | 'bold'
 
@@ -53,12 +54,11 @@ export interface SlideTemplate {
 }
 
 export interface CarouselStylePreset {
-  id: 'signature-purple' | 'minimal-editorial' | 'dark-poster'
+  id: 'signature-purple' | 'minimal-editorial' | 'dark-poster' | 'retro-desktop'
   name: string
   description: string
   theme: ReviewTheme
   templateId: SlideTemplateId
-  textSettings: SlideTextSettings
 }
 
 export interface CarouselSlideConfig<T extends string = string> {

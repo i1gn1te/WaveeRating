@@ -7,8 +7,20 @@ exports.authMiddleware = authMiddleware;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const spotify_js_1 = require("../lib/spotify.js");
 const config_js_1 = require("../lib/config.js");
+function authDebug(message, meta = {}) {
+    if (process.env.NODE_ENV === 'production') {
+        return;
+    }
+    console.log(`[Auth] ${message}`, meta);
+}
 async function authMiddleware(req, res, next) {
     const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+    authDebug('request', {
+        method: req.method,
+        path: req.originalUrl || req.url,
+        cookiePresent: Boolean(req.cookies.token),
+        authHeaderPresent: Boolean(req.headers.authorization),
+    });
     if (!token) {
         return res.status(401).json({ error: 'Authentication required' });
     }
@@ -27,6 +39,10 @@ async function authMiddleware(req, res, next) {
         req.userId = decoded.userId;
         req.spotifyAccessToken = decoded.spotifyAccessToken;
         req.authUser = decoded.user || null;
+        authDebug('verified', {
+            path: req.originalUrl || req.url,
+            userResolved: Boolean(decoded.userId),
+        });
         next();
     }
     catch (error) {

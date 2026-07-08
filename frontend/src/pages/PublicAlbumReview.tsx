@@ -230,7 +230,7 @@ export default function PublicAlbumReview() {
 
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.18em] text-pink-300">
-                  Album review {review.visibility === 'unlisted' ? ' / unlisted' : ''}
+                  Album review
                 </p>
                 <h1 className="mt-2 text-3xl font-black tracking-normal text-white sm:text-4xl">{review.albumTitle}</h1>
                 <p className="mt-2 text-gray-400">{artistLine(review.albumArtists)}</p>

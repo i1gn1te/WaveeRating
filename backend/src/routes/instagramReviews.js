@@ -8,7 +8,7 @@ const router = (0, express_1.Router)();
 const jsonValue = zod_1.z.any();
 const requiredJsonValue = zod_1.z.any().refine((value) => value !== undefined, 'Required');
 const score = zod_1.z.number().min(0).max(10);
-const visibilitySchema = zod_1.z.enum(['public', 'private', 'unlisted']).optional();
+const visibilitySchema = zod_1.z.enum(['public', 'private']).optional();
 const albumReviewSchema = zod_1.z.object({
     spotifyAlbumId: zod_1.z.string().min(1),
     albumTitle: zod_1.z.string().min(1),
@@ -268,7 +268,7 @@ function emptyToNull(value) {
     return typeof value === 'string' && value.trim() === '' ? null : value ?? null;
 }
 function toAlbumCreateData(userId, data) {
-    const visibility = normalizeVisibility(data.visibility, data.isPublic);
+    const visibility = normalizeReviewVisibility(data);
     return {
         ...toAlbumUpdateData(data),
         userId,
@@ -283,7 +283,7 @@ function toAlbumCreateData(userId, data) {
     };
 }
 function toAlbumUpdateData(data) {
-    const visibility = data.visibility === undefined && data.isPublic === undefined ? undefined : normalizeVisibility(data.visibility, data.isPublic);
+    const visibility = resolveUpdateVisibility(data);
     return stripUndefined({
         spotifyAlbumId: data.spotifyAlbumId,
         albumTitle: data.albumTitle,
@@ -309,7 +309,7 @@ function toAlbumUpdateData(data) {
     });
 }
 function toSongCreateData(userId, data) {
-    const visibility = normalizeVisibility(data.visibility, data.isPublic);
+    const visibility = normalizeReviewVisibility(data);
     return {
         ...toSongUpdateData(data),
         userId,
@@ -324,7 +324,7 @@ function toSongCreateData(userId, data) {
     };
 }
 function toSongUpdateData(data) {
-    const visibility = data.visibility === undefined && data.isPublic === undefined ? undefined : normalizeVisibility(data.visibility, data.isPublic);
+    const visibility = resolveUpdateVisibility(data);
     return stripUndefined({
         spotifyTrackId: data.spotifyTrackId,
         trackTitle: data.trackTitle,
@@ -345,11 +345,23 @@ function toSongUpdateData(data) {
         visibility,
     });
 }
-function normalizeVisibility(visibility, isPublic) {
-    if (visibility) {
-        return visibility;
+function resolveUpdateVisibility(data) {
+    if (data.isDraft === true) {
+        return 'private';
     }
-    if (isPublic === false) {
+    if (data.visibility === undefined && data.isPublic === undefined) {
+        return undefined;
+    }
+    return normalizeReviewVisibility(data);
+}
+function normalizeReviewVisibility(data) {
+    if (data.isDraft === true) {
+        return 'private';
+    }
+    if (data.visibility) {
+        return data.visibility;
+    }
+    if (data.isPublic === false) {
         return 'private';
     }
     return 'public';

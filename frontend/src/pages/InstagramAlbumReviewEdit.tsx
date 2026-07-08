@@ -72,7 +72,7 @@ export default function InstagramAlbumReviewEdit() {
     setReviewBody(review.reviewBody || '')
     setFinalRecommendation(review.finalRecommendation || '')
     setTheme(review.theme || FALLBACK_THEME)
-    setVisibility(review.visibility || (review.isPublic === false ? 'private' : 'public'))
+    setVisibility(review.visibility === 'private' || review.isPublic === false ? 'private' : 'public')
   }, [reviewQuery.data])
 
   const updateMutation = useMutation({
@@ -84,11 +84,11 @@ export default function InstagramAlbumReviewEdit() {
         finalRecommendation: finalRecommendation || null,
         theme,
         isDraft,
-        isPublic: visibility !== 'private',
-        visibility,
+        isPublic: isDraft ? false : visibility !== 'private',
+        visibility: isDraft ? 'private' : visibility,
       }),
     onSuccess: (_data, isDraft) => {
-      setMessage(isDraft ? 'Draft saved.' : 'Review saved to your profile.')
+      setMessage(isDraft ? 'Draft saved.' : 'Review published to your profile.')
       setError(null)
     },
     onError: (err: any) => {
@@ -158,7 +158,7 @@ export default function InstagramAlbumReviewEdit() {
 
             <div className="flex flex-wrap gap-3">
               <SaveButton label="Save Draft" loading={updateMutation.isPending} onClick={() => updateMutation.mutate(true)} />
-              <SaveButton label="Save to Profile" loading={updateMutation.isPending} onClick={() => updateMutation.mutate(false)} primary />
+              <SaveButton label="Publish to Profile" loading={updateMutation.isPending} onClick={() => updateMutation.mutate(false)} primary />
             </div>
             {message && <p className="rounded-lg border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-100">{message}</p>}
             {error && <p className="rounded-lg border border-red-800 bg-red-950/50 px-3 py-2 text-sm text-red-100">{error}</p>}
@@ -184,7 +184,6 @@ function VisibilitySelect({ value, onChange }: { value: ReviewVisibility; onChan
         className="mt-2 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-white outline-none transition focus:border-pink-400"
       >
         <option value="public">Public</option>
-        <option value="unlisted">Unlisted</option>
         <option value="private">Private</option>
       </select>
     </label>

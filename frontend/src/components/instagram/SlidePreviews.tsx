@@ -3,6 +3,7 @@ import { getSpotifyImageProxyUrl } from '../../lib/api'
 import { ReviewTheme, SlideTemplateId, SlideTextSettings, TrackRating } from '../../types/instagramReview'
 import { getCoverSize, getReviewBodySize, getTitleSize } from '../../lib/slideLayout'
 import CategoryBreakdown from './CategoryBreakdown'
+import { RetroDecorVariant, RetroDesktopDecor, RetroScoreBox, RetroWindow, retroPanelStyle } from './RetroDesktopDecor'
 import ScoreBadge from './ScoreBadge'
 import ScoreBar from './ScoreBar'
 
@@ -87,6 +88,8 @@ function lineClamp(lines: number) {
     WebkitBoxOrient: 'vertical' as const,
     WebkitLineClamp: lines,
     overflow: 'hidden',
+    paddingTop: '0.08em',
+    paddingBottom: '0.16em',
   }
 }
 
@@ -134,6 +137,10 @@ function isPoster(templateId?: SlideTemplateId) {
   return templateId === 'poster-score'
 }
 
+function isRetro(templateId?: SlideTemplateId) {
+  return templateId === 'retro-desktop'
+}
+
 function SlideShell({
   album,
   style,
@@ -142,9 +149,22 @@ function SlideShell({
   eyebrow = 'WaveeRating Review',
   templateId = 'signature-cover',
   textSettings,
-}: SlideProps & { children: ReactNode; refValue: ForwardedRef<HTMLDivElement>; eyebrow?: string }) {
+  decorVariant = 'review',
+  headerTitle,
+  headerSubtitle,
+}: SlideProps & {
+  children: ReactNode
+  refValue: ForwardedRef<HTMLDivElement>
+  eyebrow?: string
+  decorVariant?: RetroDecorVariant
+  headerTitle?: string
+  headerSubtitle?: string
+}) {
   const radius = clampRadius(style.borderRadius)
   const text = withDefaults(textSettings)
+  const displayedTitle = headerTitle || album.title || album.name
+  const displayedSubtitle = headerSubtitle ?? artistLine(album)
+  const shouldShowSubtitle = displayedSubtitle.trim().length > 0
   const frameRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(1)
 
@@ -187,13 +207,15 @@ function SlideShell({
     color: style.textColor,
     borderRadius: radius,
     containerType: 'inline-size',
-    fontFamily: fontFamily(text),
+    fontFamily: isRetro(templateId) ? 'Tahoma, Verdana, "MS Sans Serif", system-ui, sans-serif' : fontFamily(text),
     overflow: 'hidden',
     position: 'relative',
     boxSizing: 'border-box',
   } as CSSProperties
   const decoration =
-    isPoster(templateId)
+    isRetro(templateId)
+      ? `linear-gradient(135deg, ${style.coverFrameColor}42 0 12%, transparent 12% 100%), linear-gradient(180deg, ${style.backgroundColor} 0%, #fef3c7 100%)`
+      : isPoster(templateId)
       ? `linear-gradient(145deg, ${style.accentColor}26 0%, transparent 42%), radial-gradient(circle at 18% 12%, ${style.coverFrameColor}18 0, transparent 28%)`
       : isEditorial(templateId)
         ? `linear-gradient(180deg, ${style.accentColor}12 0%, transparent 45%)`
@@ -212,25 +234,39 @@ function SlideShell({
           className="isolate bg-gray-950"
           style={canvasStyle}
         >
-          <div className="pointer-events-none absolute inset-0" style={{ background: decoration, opacity: isEditorial(templateId) ? 0.32 : 0.2 }} />
-          <div className="relative flex h-full flex-col justify-between p-[6.4%]">
-            <header className="min-h-0">
+          <div className="pointer-events-none absolute inset-0" style={{ background: decoration, opacity: isRetro(templateId) ? 1 : isEditorial(templateId) ? 0.32 : 0.2 }} />
+          {isRetro(templateId) && <RetroDesktopDecor variant={decorVariant} style={style} />}
+          <div className="relative z-10 flex h-full flex-col justify-between p-[6.4%]">
+            <header
+              className="min-h-0"
+              style={
+                isRetro(templateId)
+                  ? {
+                      ...retroPanelStyle(style, style.coverFrameColor),
+                      borderRadius: 4,
+                      padding: '2.4% 3%',
+                    }
+                  : undefined
+              }
+            >
               <p
                 className="font-black tracking-[0.22em]"
                 style={{
                   color: style.accentColor,
-                  fontSize: isPoster(templateId) ? '2.5cqw' : '2.25cqw',
+                  fontSize: isRetro(templateId) ? '1.9cqw' : isPoster(templateId) ? '2.5cqw' : '2.25cqw',
                   textTransform: text.uppercaseHeadings ? 'uppercase' : 'none',
                 }}
               >
                 {heading(eyebrow, text)}
               </p>
-              <h3 className="mt-[1.8%] max-h-[2.25em] font-black leading-[0.96]" style={{ fontSize: getTitleSize(album.title || album.name, titleSize(text)), ...lineClamp(2) }}>
-                {album.title || album.name}
+              <h3 className="mt-[1.8%] font-black leading-[1.12]" style={{ fontSize: getTitleSize(displayedTitle, isRetro(templateId) ? '5.7cqw' : titleSize(text)), ...lineClamp(2) }}>
+                {displayedTitle}
               </h3>
-              <p className="mt-[2%] max-h-[1.4em] font-semibold opacity-80" style={{ fontSize: '2.8cqw', ...lineClamp(1) }}>
-                {artistLine(album)}
-              </p>
+              {shouldShowSubtitle && (
+                <p className="mt-[2%] font-semibold leading-[1.2] opacity-80" style={{ fontSize: '2.8cqw', ...lineClamp(1) }}>
+                  {displayedSubtitle}
+                </p>
+              )}
             </header>
             {children}
           </div>
@@ -289,9 +325,29 @@ export const CoverSlidePreview = forwardRef<HTMLDivElement, SlideProps>(function
   { album, style, templateId = 'signature-cover', textSettings },
   ref
 ) {
+  if (isRetro(templateId)) {
+    return (
+      <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Desktop" templateId={templateId} textSettings={textSettings} decorVariant="cover" headerSubtitle="">
+        <section className="grid min-h-0 flex-1 grid-rows-[1fr_auto] gap-[4%] py-[3%] text-center">
+          <div className="flex min-h-0 items-center justify-center">
+            <CoverImage album={album} style={style} />
+          </div>
+          <RetroWindow title="album.info" style={style} className="mx-auto w-[78%]" contentClassName="px-[5%] py-[3.5%]">
+            <p className="font-black leading-[1.05]" style={{ fontSize: '3.25cqw', ...lineClamp(1) }}>
+              {artistLine(album)}
+            </p>
+            <p className="mt-[1.8%] font-bold uppercase tracking-[0.18em]" style={{ color: style.accentColor, fontSize: '1.85cqw' }}>
+              {[releaseYear(album), album.totalTracks ? `${album.totalTracks} tracks` : null].filter(Boolean).join(' / ') || 'album review'}
+            </p>
+          </RetroWindow>
+        </section>
+      </SlideShell>
+    )
+  }
+
   if (isEditorial(templateId)) {
     return (
-      <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings}>
+      <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings} headerSubtitle="">
         <section className="grid min-h-0 flex-1 grid-cols-[auto_1fr] items-center gap-[6%] py-[4%]">
           <CoverImage album={album} style={style} size="editorial" />
           <div className="min-w-0 flex-1">
@@ -309,7 +365,7 @@ export const CoverSlidePreview = forwardRef<HTMLDivElement, SlideProps>(function
 
   if (isPoster(templateId)) {
     return (
-      <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings}>
+      <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings} headerSubtitle="">
         <section className="grid min-h-0 flex-1 grid-rows-[1fr_auto] gap-[4%] py-[3%] text-center">
           <div className="flex min-h-0 items-center justify-center">
           <CoverImage album={album} style={style} size="large" />
@@ -330,7 +386,7 @@ export const CoverSlidePreview = forwardRef<HTMLDivElement, SlideProps>(function
   }
 
   return (
-    <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings}>
+    <SlideShell album={album} style={style} refValue={ref} eyebrow="WaveeRating Review" templateId={templateId} textSettings={textSettings} headerSubtitle="">
       <section className="grid min-h-0 flex-1 grid-rows-[1fr_auto] gap-[4%] py-[3%] text-center">
         <div className="flex min-h-0 items-center justify-center">
         <CoverImage album={album} style={style} />
@@ -356,12 +412,45 @@ export const AlbumReviewSlidePreview = forwardRef<HTMLDivElement, ReviewSlidePro
 ) {
   const radius = clampRadius(style.borderRadius)
 
+  if (isRetro(templateId)) {
+    return (
+      <SlideShell album={album} style={style} refValue={ref} eyebrow="Album Review" templateId={templateId} textSettings={textSettings} decorVariant="review">
+        <section className="grid min-h-0 flex-1 grid-rows-[auto_1fr_auto] gap-[3.8%] pt-[5%]">
+          <div className="grid grid-cols-[auto_1fr_auto] items-end gap-[4%]">
+            <CoverImage album={album} style={style} size="small" />
+            <RetroWindow title="verdict.txt" style={style} contentClassName="px-[4%] py-[3%]">
+            <p className="font-black leading-[1.12]" style={{ fontSize: getTitleSize(verdict || 'Album verdict', '4.7cqw'), ...lineClamp(2) }}>
+              {verdict || 'Album verdict'}
+            </p>
+            </RetroWindow>
+            <RetroScoreBox score={finalScore} style={style} compact />
+          </div>
+
+          <RetroWindow title="review.txt" style={style} className="min-h-0" contentClassName="h-full min-h-0 px-[5%] py-[4.5%]">
+            <p className="font-bold leading-[1.18]" style={{ fontSize: getReviewBodySize(review, bodySize(textSettings, '3.05cqw')), ...lineClamp(10) }}>
+              {review || 'Write a clear album review here. Keep it sharp, visual, and ready for an Instagram carousel.'}
+            </p>
+          </RetroWindow>
+
+          <div className="grid grid-cols-[1fr_auto] items-center gap-[4%]">
+            <RetroWindow title="recommendation.sys" style={style} contentClassName="px-[4%] py-[3%]">
+              <p className="font-black leading-[1.16]" style={{ fontSize: '2.45cqw', ...lineClamp(3) }}>
+                {recommendation || 'Final recommendation goes here.'}
+              </p>
+            </RetroWindow>
+            {categoryRatings && <CategoryBreakdown categories={categoryRatings} textColor={style.textColor} accentColor={style.accentColor} mutedColor={`${style.textColor}22`} compact />}
+          </div>
+        </section>
+      </SlideShell>
+    )
+  }
+
   if (isPoster(templateId)) {
     return (
       <SlideShell album={album} style={style} refValue={ref} eyebrow="Album Review" templateId={templateId} textSettings={textSettings}>
         <section className="grid min-h-0 flex-1 grid-rows-[auto_1fr_auto] gap-[4%] pt-[4%]">
           <div className="grid grid-cols-[1fr_auto] items-end gap-[5%]">
-            <h4 className="font-black uppercase leading-[0.86]" style={{ fontSize: '8.8cqw', ...lineClamp(3) }}>
+            <h4 className="font-black uppercase leading-[1.02]" style={{ fontSize: '8.2cqw', ...lineClamp(3) }}>
               {verdict || 'Album verdict'}
             </h4>
             <ScoreBadge score={finalScore} size="poster" textColor={`${style.textColor}bb`} mutedColor={`${style.textColor}24`} />
@@ -421,7 +510,7 @@ export const AlbumReviewSlidePreview = forwardRef<HTMLDivElement, ReviewSlidePro
             <p className="font-black uppercase tracking-[0.18em] opacity-70" style={{ fontSize: '2cqw' }}>
               {heading('Album Review', textSettings)}
             </p>
-            <p className="mt-[1%] font-black leading-[0.96]" style={{ fontSize: titleSize(textSettings, '5cqw'), ...lineClamp(2) }}>
+            <p className="mt-[1%] font-black leading-[1.1]" style={{ fontSize: titleSize(textSettings, '5cqw'), ...lineClamp(2) }}>
               {verdict || 'Album verdict'}
             </p>
           </div>
@@ -470,6 +559,53 @@ export const TrackRatingsSummarySlidePreview = forwardRef<HTMLDivElement, TrackR
   const hiddenCount = Math.max(0, trackRatings.length - visibleTracks.length)
   const useTwoColumns = visibleTracks.length > 9
 
+  if (isRetro(templateId)) {
+    return (
+      <SlideShell album={album} style={style} refValue={ref} eyebrow="Track Ratings" templateId={templateId} textSettings={textSettings} decorVariant="summary">
+        <section className="grid min-h-0 flex-1 grid-rows-[auto_1fr_auto] gap-[3.8%] pt-[5%]">
+          <div className="grid grid-cols-[1fr_auto] items-end gap-[4%]">
+            <RetroWindow title="tracks.exe" style={style} contentClassName="px-[4%] py-[3%]">
+              <p className="font-black uppercase tracking-[0.16em]" style={{ color: style.accentColor, fontSize: '1.75cqw' }}>
+                Track Ratings Summary
+              </p>
+            </RetroWindow>
+            <RetroScoreBox score={finalScore} style={style} compact />
+          </div>
+
+          <RetroWindow title="file list" style={style} className="min-h-0" contentClassName="h-full min-h-0 px-[3.5%] py-[3.2%]">
+            <div className={`grid min-h-0 gap-[2%] ${useTwoColumns ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {visibleTracks.map((track) => (
+                <div key={track.spotifyTrackId} className="min-w-0 border-2 bg-white px-[2.4%] py-[1.6%]" style={{ borderColor: style.textColor }}>
+                  <div className="mb-[1%] flex items-center justify-between gap-[3%]">
+                    <p className="min-w-0 truncate font-black" style={{ fontSize: useTwoColumns ? '1.52cqw' : '1.95cqw' }}>
+                      {track.trackNumber ? `${String(track.trackNumber).padStart(2, '0')}. ` : ''}
+                      {trackTitle(track)}
+                    </p>
+                    <p className="font-black tabular-nums" style={{ color: style.accentColor, fontSize: useTwoColumns ? '1.7cqw' : '2.05cqw' }}>
+                      {track.finalScore.toFixed(1)}
+                    </p>
+                  </div>
+                  <ScoreBar score={track.finalScore} height={useTwoColumns ? '0.35rem' : '0.48rem'} mutedColor={`${style.textColor}22`} />
+                </div>
+              ))}
+            </div>
+          </RetroWindow>
+
+          <div className="flex items-center justify-between gap-[4%]">
+            <p className="font-black uppercase tracking-[0.16em]" style={{ fontSize: '1.85cqw' }}>
+              {trackRatings.length} track{trackRatings.length === 1 ? '' : 's'} rated
+            </p>
+            {hiddenCount > 0 && (
+              <p className="font-black" style={{ color: style.accentColor, fontSize: '2cqw' }}>
+                + {hiddenCount} more files
+              </p>
+            )}
+          </div>
+        </section>
+      </SlideShell>
+    )
+  }
+
   return (
     <SlideShell album={album} style={style} refValue={ref} eyebrow="Track Ratings" templateId={templateId} textSettings={textSettings}>
       <section className="grid min-h-0 flex-1 grid-rows-[auto_1fr_auto] gap-[4%] pt-[5%]">
@@ -477,9 +613,6 @@ export const TrackRatingsSummarySlidePreview = forwardRef<HTMLDivElement, TrackR
           <div className="min-w-0 flex-1">
             <p className="font-black tracking-[0.18em]" style={{ color: style.accentColor, fontSize: '2cqw' }}>
               {heading('Track Ratings Summary', textSettings)}
-            </p>
-            <p className="mt-[2%] font-black leading-[0.96]" style={{ fontSize: titleSize(textSettings, '5.5cqw'), ...lineClamp(2) }}>
-              {album.title || album.name}
             </p>
           </div>
           <ScoreBadge score={finalScore} size={isPoster(templateId) ? 'lg' : 'md'} textColor={`${style.textColor}b8`} mutedColor={`${style.textColor}24`} />
@@ -574,6 +707,46 @@ function TrackSlidePreview({
   textSettings,
 }: TrackSlideProps & { label: string; refValue: ForwardedRef<HTMLDivElement> }) {
   const radius = clampRadius(style.borderRadius)
+  const currentTrackTitle = trackTitle(track)
+  const spotlightLabel = label === 'WEAKEST TRACK' ? 'WEAKEST' : 'BEST'
+  const trackNumberLabel = track?.trackNumber ? `TRACK ${String(track.trackNumber).padStart(2, '0')}` : 'TRACK'
+
+  if (isRetro(templateId)) {
+    return (
+      <SlideShell
+        album={album}
+        style={style}
+        refValue={refValue}
+        eyebrow={label}
+        templateId={templateId}
+        textSettings={textSettings}
+        decorVariant="track"
+        headerTitle={currentTrackTitle}
+        headerSubtitle={`${artistLine(album)} - ${album.title || album.name}`}
+      >
+        <section className="grid min-h-0 flex-1 grid-rows-[auto_1fr] gap-[4.5%] pt-[5%]">
+          <div className="grid grid-cols-[auto_1fr_auto] items-end gap-[4%]">
+            <CoverImage album={album} style={style} size="track" />
+            <RetroWindow title="track.flag" style={style} contentClassName="px-[4%] py-[3%]">
+              <p className="font-black uppercase tracking-[0.18em]" style={{ color: style.accentColor, fontSize: '2.2cqw' }}>
+                {spotlightLabel}
+              </p>
+              <p className="mt-[2.4%] font-black uppercase leading-[1.14] tracking-[0.12em]" style={{ fontSize: '2.6cqw' }}>
+                {trackNumberLabel}
+              </p>
+            </RetroWindow>
+            <RetroScoreBox score={score} style={style} compact />
+          </div>
+
+          <RetroWindow title="review.txt" style={style} className="min-h-0" contentClassName="h-full min-h-0 px-[5%] py-[5%]">
+            <p className="font-bold leading-[1.2]" style={{ fontSize: getReviewBodySize(text, bodySize(textSettings, '3.1cqw')), ...lineClamp(9) }}>
+              {text || 'Short track review goes here.'}
+            </p>
+          </RetroWindow>
+        </section>
+      </SlideShell>
+    )
+  }
 
   return (
     <SlideShell album={album} style={style} refValue={refValue} eyebrow={label} templateId={templateId} textSettings={textSettings}>
@@ -594,7 +767,7 @@ function TrackSlidePreview({
           <p className="font-black tracking-[0.2em]" style={{ color: style.accentColor, fontSize: '2.2cqw', textTransform: withDefaults(textSettings).uppercaseHeadings ? 'uppercase' : 'none' }}>
             {heading(label, textSettings)}
           </p>
-          <h4 className="mt-[3%] font-black leading-[0.92]" style={{ fontSize: titleSize(textSettings, '8.5cqw'), ...lineClamp(2) }}>
+          <h4 className="mt-[3%] font-black leading-[1.06]" style={{ fontSize: titleSize(textSettings, '8.1cqw'), ...lineClamp(2) }}>
             {trackTitle(track)}
           </h4>
           <p className="mt-[5%] font-medium leading-[1.2] opacity-88" style={{ fontSize: bodySize(textSettings, '3cqw'), ...lineClamp(6) }}>

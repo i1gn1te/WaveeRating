@@ -372,16 +372,14 @@ function StatusBadge({ isDraft }: { isDraft: boolean }) {
   )
 }
 
-function VisibilityBadge({ visibility, isPublic }: { visibility?: ReviewVisibility; isPublic?: boolean }) {
-  const resolvedVisibility: ReviewVisibility = visibility || (isPublic === false ? 'private' : 'public')
+function VisibilityBadge({ visibility, isPublic }: { visibility?: ReviewVisibility | string; isPublic?: boolean }) {
+  const resolvedVisibility: ReviewVisibility = visibility === 'private' || isPublic === false ? 'private' : 'public'
   const styles = {
     public: 'bg-sky-500/15 text-sky-100',
-    unlisted: 'bg-violet-500/15 text-violet-100',
     private: 'bg-gray-700 text-gray-100',
   }
   const labels = {
     public: 'Public',
-    unlisted: 'Unlisted',
     private: 'Private',
   }
 

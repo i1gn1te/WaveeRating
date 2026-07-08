@@ -67,6 +67,17 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     textBoxStyle: 'solid-card',
     vibe: 'Dense layout tuned for track lists and score breakdowns.',
   },
+  {
+    id: 'retro-desktop',
+    name: 'Retro Desktop',
+    slideType: 'review',
+    layout: 'retro',
+    fontStyle: 'bold',
+    coverPosition: 'center',
+    scoreStyle: 'badge',
+    textBoxStyle: 'outlined',
+    vibe: 'Old web desktop collage with chunky windows, pixel stickers, and readable review panels.',
+  },
 ]
 
 export const CAROUSEL_STYLE_PRESETS: CarouselStylePreset[] = [
@@ -84,12 +95,6 @@ export const CAROUSEL_STYLE_PRESETS: CarouselStylePreset[] = [
       shadowIntensity: 34,
       borderRadius: 28,
     },
-    textSettings: {
-      titleSize: 'medium',
-      bodySize: 'medium',
-      uppercaseHeadings: true,
-      fontMood: 'bold',
-    },
   },
   {
     id: 'minimal-editorial',
@@ -104,12 +109,6 @@ export const CAROUSEL_STYLE_PRESETS: CarouselStylePreset[] = [
       coverFrameColor: '#111827',
       shadowIntensity: 18,
       borderRadius: 18,
-    },
-    textSettings: {
-      titleSize: 'medium',
-      bodySize: 'large',
-      uppercaseHeadings: false,
-      fontMood: 'editorial',
     },
   },
   {
@@ -126,11 +125,20 @@ export const CAROUSEL_STYLE_PRESETS: CarouselStylePreset[] = [
       shadowIntensity: 54,
       borderRadius: 10,
     },
-    textSettings: {
-      titleSize: 'large',
-      bodySize: 'medium',
-      uppercaseHeadings: true,
-      fontMood: 'bold',
+  },
+  {
+    id: 'retro-desktop',
+    name: 'Retro Desktop',
+    description: 'Pastel old-web desktop with window panels, pixel stickers, and chunky score boxes.',
+    templateId: 'retro-desktop',
+    theme: {
+      backgroundColor: '#9bd7e8',
+      cardColor: '#fff4bf',
+      textColor: '#172554',
+      accentColor: '#ff4fb8',
+      coverFrameColor: '#f8fafc',
+      shadowIntensity: 22,
+      borderRadius: 12,
     },
   },
 ]
@@ -148,7 +156,7 @@ export default function CarouselTemplatePicker({ selectedId, onSelect }: Carouse
   return (
     <div>
       <p className="mb-3 text-sm font-semibold text-gray-300">Slide Style / Template</p>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {CAROUSEL_STYLE_PRESETS.map((preset) => (
           <button
             key={preset.id}

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Edit3, Loader2, Music2, Trash2 } from 'lucide-react'
 import { deleteSongReview, getSongReview } from '../lib/instagramReviewsApi'
-import { ReviewArtist, ReviewTheme, SONG_RATING_CATEGORIES, SongDraftTrackData } from '../types/instagramReview'
+import { ReviewArtist, ReviewTheme, SlideTemplateId, SlideTextSettings, SONG_RATING_CATEGORIES, SongDraftTrackData } from '../types/instagramReview'
 import SongExportButton from '../components/instagram/SongExportButton'
 import SongReviewSlidePreview from '../components/instagram/SongReviewSlidePreview'
 import CarouselZipExportButton from '../components/instagram/CarouselZipExportButton'
@@ -95,6 +95,8 @@ export default function InstagramSongReviewDetail() {
   usePageTitle(review ? `${review.trackTitle} Review` : 'Saved Song Review')
   const style = review?.theme || FALLBACK_THEME
   const categoryRatings = review?.ratingData?.categoryRatings || {}
+  const templateId = (review?.slideData?.templateId || review?.ratingData?.templateId) as SlideTemplateId | undefined
+  const textSettings = (review?.slideData?.textSettings || review?.ratingData?.textSettings) as SlideTextSettings | undefined
   const trackForPreview = useMemo<SongDraftTrackData | null>(() => {
     if (!review) {
       return null
@@ -223,19 +225,35 @@ export default function InstagramSongReviewDetail() {
           <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
             <SongExportButton track={trackForPreview} style={style} targetRef={songSlideRef} />
             <CarouselZipExportButton
+              label="Export Song Review ZIP"
+              title="Song Review ZIP"
+              description="Pack the current song review PNG into one ZIP file."
               zipFilename={`${slugify(review.trackArtists?.[0]?.name || 'unknown-artist')}-${slugify(review.trackTitle)}-instagram-review.zip`}
               style={style}
-              targets={[{ filename: '01-song-review.png', label: 'Song Review Slide', ref: songSlideRef }]}
+              targets={[
+                {
+                  filename: '01-song-review.png',
+                  label: 'Song Review Slide',
+                  ref: songSlideRef,
+                  type: 'song-review',
+                  entityId: trackForPreview.id,
+                  imageUrl: trackForPreview.imageUrl || null,
+                },
+              ]}
             />
             <SongReviewSlidePreview
+              key={`song-export-${trackForPreview.id}-${trackForPreview.imageUrl || 'no-cover'}`}
               ref={songSlideRef}
               track={trackForPreview}
+              imageUrl={trackForPreview.imageUrl || null}
               style={style}
               finalScore={review.finalScore}
               verdict={review.reviewTitle || ''}
               review={review.reviewBody || ''}
               finalNote={review.finalRecommendation || ''}
               moodTags={review.slideData?.moodTags || review.ratingData?.moodTags || ''}
+              templateId={templateId}
+              textSettings={textSettings}
             />
           </aside>
         </div>

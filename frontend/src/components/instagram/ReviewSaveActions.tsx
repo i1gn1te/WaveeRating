@@ -26,7 +26,7 @@ export default function ReviewSaveActions({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-white">Save review</h2>
-          <p className="mt-1 text-sm text-gray-400">Drafts are private and editable later. Publishing uses the selected visibility.</p>
+          <p className="mt-1 text-sm text-gray-400">Drafts are private and editable later. Publishing follows Public or Private visibility.</p>
         </div>
         {isSaving ? <Loader2 className="h-5 w-5 animate-spin text-pink-300" /> : <Save className="h-5 w-5 text-gray-500" />}
       </div>
@@ -63,7 +63,7 @@ export default function ReviewSaveActions({
             {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             Publish to Profile
           </button>
-          <p className="mt-2 text-xs leading-5 text-gray-500">Publish this review to your library using selected visibility.</p>
+          <p className="mt-2 text-xs leading-5 text-gray-500">Save this review to your profile using selected visibility.</p>
         </div>
       </div>
 
